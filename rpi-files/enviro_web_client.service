@@ -1,0 +1,20 @@
+# /etc/systemd/system/enviro_web_client.service
+[Unit]
+Description=Enviro+ + Pimoroni SGP30 web client
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/enviro_client
+# Use the Python from your virtual environment
+ExecStart=/home/pi/enviro_client/venv/bin/python /home/pi/enviro_client/sensor_client.py
+Restart=on-failure
+RestartSec=5
+
+# Allow audio access for noise measurement
+Environment=PULSE_SERVER=unix:/run/user/1000/pulse/native
+
+[Install]
+WantedBy=multi-user.target

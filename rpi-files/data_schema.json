@@ -1,0 +1,14 @@
+{
+  "device_id": "raspi-lab-01",
+  "timestamp": "2025-11-12T08:01:45.123456+00:00",
+  "sensors": {
+    "brightness_lux": 153.7,
+    "eco2_ppm": 612,
+    "temperature_c": 22.6,
+    "noise_db": 34.5
+  },
+  "meta": {
+    "app": "ClassSense",
+    "version": "1.2.0"
+  }
+}

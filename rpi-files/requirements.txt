@@ -1,0 +1,11 @@
+enviroplus>=1.0.0
+ltr559
+bme280
+st7735
+Pillow
+RPi.GPIO
+spidev
+smbus2
+sounddevice
+numpy
+requests
