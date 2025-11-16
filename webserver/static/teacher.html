@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ClassSense Teacher Dashboard</title>
+    <link rel="stylesheet" href="styles.css" />
+    <style>
+      .charts {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 16px;
+      }
+      .chart-card {
+        padding: 14px;
+        border-radius: 14px;
+        border: 1px solid var(--border);
+        background: var(--card);
+        box-shadow: var(--shadow);
+      }
+      canvas {
+        width: 100%;
+        height: 240px;
+      }
+      .legend {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-top: 10px;
+        font-size: 12px;
+        color: var(--muted-foreground);
+      }
+      .legend span {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .legend .dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        display: inline-block;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header class="topbar">
+        <div class="brand">Teacher Dashboard</div>
+        <div class="actions">
+          <button id="themeToggle" class="ghost">Dark</button>
+        </div>
+      </header>
+
+      <section class="card">
+        <div class="pin-row">
+          <input id="pinInput" type="text" maxlength="5" placeholder="Class PIN" />
+          <button id="connectBtn" class="primary">Connect & Poll</button>
+        </div>
+        <div id="status" class="status">Enter a class PIN to view activity.</div>
+      </section>
+
+      <section class="card">
+        <h3>Latest sensor snapshot</h3>
+        <div id="sensors" class="env-row"></div>
+        <div class="muted" id="lastSensor">Last sensor: none</div>
+      </section>
+
+      <section class="card">
+        <h3>Class signals</h3>
+        <div class="charts">
+          <div class="chart-card">
+            <h4>Per-minute CO₂ & emotions</h4>
+            <canvas id="signalChart"></canvas>
+            <div class="legend">
+              <span><span class="dot" style="background:#0ea5e9;"></span>Too fast</span>
+              <span><span class="dot" style="background:#6366f1;"></span>Overloaded</span>
+              <span><span class="dot" style="background:#22c55e;"></span>OK</span>
+              <span><span class="dot" style="background:#facc15;"></span>Tired</span>
+              <span><span class="dot" style="background:#8b5cf6;"></span>Focus avg</span>
+              <span><span class="dot" style="background:#f97316;"></span>CO₂ (ppm)</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+      let theme = prefersDark ? "dark" : "light";
+      const setTheme = (th) => document.documentElement.classList.toggle("dark", th === "dark");
+      setTheme(theme);
+      document.getElementById("themeToggle").onclick = () => {
+        theme = theme === "dark" ? "light" : "dark";
+        setTheme(theme);
+        document.getElementById("themeToggle").textContent = theme === "dark" ? "Light" : "Dark";
+      };
+
+      let pollTimer = null;
+      let pin = "";
+
+      const statusEl = document.getElementById("status");
+      const sensorsEl = document.getElementById("sensors");
+      const lastSensorEl = document.getElementById("lastSensor");
+      const signalCanvas = document.getElementById("signalChart");
+      const ctx = signalCanvas.getContext("2d");
+
+      // Simple in-memory histories (per minute) for charting
+      const co2History = new Map(); // minuteKey -> ppm
+      const emotionBuckets = new Map(); // minuteKey -> { counts: Map<key,count>, focusSum, focusCount }
+
+      const EMOTION_COLORS = {
+        "too-fast": "#0ea5e9",
+        overloaded: "#6366f1",
+        ok: "#22c55e",
+        tired: "#facc15",
+      };
+
+      const minuteKey = (ts) => {
+        const t = new Date(ts);
+        return `${t.getHours().toString().padStart(2, "0")}:${t.getMinutes().toString().padStart(2, "0")}`;
+      };
+
+      function pruneHistory(map, keep = 120) {
+        const keys = Array.from(map.keys()).sort();
+        while (keys.length > keep) {
+          const k = keys.shift();
+          map.delete(k);
+        }
+      }
+
+      function setStatus(msg, isErr = false) {
+        statusEl.textContent = msg;
+        statusEl.className = isErr ? "status error" : "status";
+      }
+
+      function renderSensors(sensor) {
+        const s = sensor?.sensors || {};
+        const items = [
+          { label: "°C", value: s.temperature_c != null ? `${Math.round(s.temperature_c)}°C` : "n/a" },
+          { label: "CO₂", value: s.eco2_ppm != null ? `${Math.round(s.eco2_ppm)} ppm` : "n/a" },
+          { label: "🔊", value: s.noise_db != null ? `${Math.round(s.noise_db)} dB` : "n/a" },
+          { label: "Lux", value: s.brightness_lux != null ? `${Math.round(s.brightness_lux)} lx` : "n/a" },
+        ];
+        sensorsEl.innerHTML = items.map((i) => `
+          <div class="env-badge">
+            <div class="env-icon">${i.label}</div>
+            <div class="env-value">${i.value}</div>
+          </div>
+        `).join("");
+        lastSensorEl.textContent = `Last sensor: ${sensor?.timestamp || "none"}`;
+
+        // Track CO₂ history for the chart (bucketed per minute)
+        if (sensor?.sensors?.eco2_ppm != null) {
+          const key = minuteKey(sensor.timestamp || Date.now());
+          co2History.set(key, Math.round(sensor.sensors.eco2_ppm));
+          pruneHistory(co2History);
+        }
+      }
+
+      function aggregateEmotions(emotions = []) {
+        emotionBuckets.clear();
+        emotions.forEach((e) => {
+          const key = minuteKey(e.received_at);
+          if (!emotionBuckets.has(key)) emotionBuckets.set(key, { counts: new Map(), focusSum: 0, focusCount: 0 });
+          const bucket = emotionBuckets.get(key);
+          const payload = e.payload || {};
+          if (typeof payload.focus === "number") {
+            bucket.focusSum += Number(payload.focus);
+            bucket.focusCount += 1;
+          }
+          if (payload.pace) {
+            bucket.counts.set(payload.pace, (bucket.counts.get(payload.pace) || 0) + 1);
+          }
+        });
+        pruneHistory(emotionBuckets);
+      }
+
+      function renderChart() {
+        const labels = Array.from(new Set([...co2History.keys(), ...emotionBuckets.keys()])).sort();
+
+        // If we have gaps, ensure every minute has a bucket & co2 value
+        labels.forEach((l) => {
+          if (!emotionBuckets.has(l)) emotionBuckets.set(l, { counts: new Map(), focusSum: 0, focusCount: 0 });
+          if (!co2History.has(l)) co2History.set(l, 0);
+        });
+
+        signalCanvas.width = signalCanvas.clientWidth;
+        signalCanvas.height = signalCanvas.clientHeight;
+        ctx.clearRect(0, 0, signalCanvas.width, signalCanvas.height);
+
+        if (!labels.length) {
+          ctx.fillStyle = "var(--muted-foreground)";
+          ctx.font = "14px sans-serif";
+          ctx.fillText("No data yet. Connect to start polling.", 12, 24);
+          return;
+        }
+
+        const leftPad = 44;
+        const rightPad = 52;
+        const topPad = 16;
+        const bottomPad = 32;
+        const w = signalCanvas.width;
+        const h = signalCanvas.height;
+        const plotW = w - leftPad - rightPad;
+        const plotH = h - topPad - bottomPad;
+
+        const co2Vals = labels.map((l) => co2History.get(l) ?? 0);
+
+        // max stack of emotion counts per minute
+        const maxStack = Math.max(
+          ...labels.map((l) => {
+            const bucket = emotionBuckets.get(l);
+            if (!bucket) return 0;
+            return Array.from(bucket.counts.values()).reduce((a, b) => a + b, 0);
+          }),
+          1
+        );
+
+        // per-minute average focus (0–100)
+        const maxFocus = Math.max(
+          ...labels.map((l) => {
+            const bucket = emotionBuckets.get(l);
+            return bucket && bucket.focusCount ? bucket.focusSum / bucket.focusCount : 0;
+          }),
+          0,
+          100
+        );
+
+        const maxEmotionScale = Math.max(maxStack, maxFocus);
+        const maxCo2 = Math.max(...co2Vals, 400);
+        const minCo2 = Math.min(...co2Vals, 0);
+
+        const xFor = (idx) =>
+          leftPad + (labels.length === 1 ? plotW / 2 : (idx / (labels.length - 1)) * plotW);
+        const yEmotion = (v) => topPad + plotH - (v / maxEmotionScale) * plotH;
+        const yCo2 = (v) =>
+          topPad + plotH - ((v - minCo2) / Math.max(maxCo2 - minCo2 || 1, 1)) * plotH;
+
+        // --- grid lines ---
+        ctx.strokeStyle = "rgba(255,255,255,0.06)";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        [0, 0.5, 1].forEach((p) => {
+          const y = topPad + plotH * p;
+          ctx.moveTo(leftPad, y);
+          ctx.lineTo(w - rightPad, y);
+        });
+        ctx.stroke();
+
+        // -------- EMOTION LINES (one per type) --------
+        const EMOTION_KEYS = ["too-fast", "overloaded", "ok", "tired"];
+
+        EMOTION_KEYS.forEach((key) => {
+          ctx.strokeStyle = EMOTION_COLORS[key] || "#94a3b8";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          let started = false;
+
+          labels.forEach((l, idx) => {
+            const bucket = emotionBuckets.get(l);
+            const v = bucket ? bucket.counts.get(key) || 0 : 0;
+            // if you want gaps where there’s no data, skip v === 0
+            const x = xFor(idx);
+            const y = yEmotion(v);
+
+            if (!started) {
+              ctx.moveTo(x, y);
+              started = true;
+            } else {
+              ctx.lineTo(x, y);
+            }
+          });
+
+          if (started) ctx.stroke();
+        });
+
+        // -------- FOCUS AVERAGE LINE --------
+        ctx.strokeStyle = "#8b5cf6";
+        ctx.fillStyle = "#8b5cf6";
+        ctx.lineWidth = 2;
+        let startedFocus = false;
+        ctx.beginPath();
+
+        labels.forEach((l, idx) => {
+          const bucket = emotionBuckets.get(l);
+          if (!bucket || !bucket.focusCount) return;
+          const avg = bucket.focusSum / bucket.focusCount; // per-minute weighted by count
+          const x = xFor(idx);
+          const y = yEmotion(avg);
+
+          if (!startedFocus) {
+            ctx.moveTo(x, y);
+            startedFocus = true;
+          } else {
+            ctx.lineTo(x, y);
+          }
+        });
+
+        if (startedFocus) {
+          ctx.stroke();
+          // draw focus points
+          labels.forEach((l, idx) => {
+            const bucket = emotionBuckets.get(l);
+            if (!bucket || !bucket.focusCount) return;
+            const avg = bucket.focusSum / bucket.focusCount;
+            const x = xFor(idx);
+            const y = yEmotion(avg);
+            ctx.beginPath();
+            ctx.arc(x, y, 3, 0, Math.PI * 2);
+            ctx.fill();
+          });
+        }
+
+        // -------- CO₂ LINE (no fill) --------
+        ctx.strokeStyle = "#f97316";
+        ctx.fillStyle = "#f97316";
+        ctx.lineWidth = 2;
+        let startedCo2 = false;
+        ctx.beginPath();
+
+        labels.forEach((l, idx) => {
+          const val = co2History.get(l) ?? 0;
+          const x = xFor(idx);
+          const y = yCo2(val);
+          if (!startedCo2) {
+            ctx.moveTo(x, y);
+            startedCo2 = true;
+          } else {
+            ctx.lineTo(x, y);
+          }
+        });
+
+        if (startedCo2) {
+          ctx.stroke();
+          // draw CO₂ points
+          labels.forEach((l, idx) => {
+            const val = co2History.get(l) ?? 0;
+            const x = xFor(idx);
+            const y = yCo2(val);
+            ctx.beginPath();
+            ctx.arc(x, y, 3, 0, Math.PI * 2);
+            ctx.fill();
+          });
+        }
+
+        // -------- axes labels / x-ticks --------
+        ctx.fillStyle = "var(--muted-foreground)";
+        ctx.font = "11px sans-serif";
+
+        labels.forEach((l, idx) => {
+          const x = xFor(idx);
+          ctx.textAlign = "center";
+          ctx.fillText(l, x, h - 10);
+        });
+
+        ctx.textAlign = "left";
+        ctx.fillText("Emotions per type / Focus avg (0–100)", 8, 12);
+        ctx.textAlign = "right";
+        ctx.fillText(`CO₂ ${minCo2}–${maxCo2} ppm`, w - 8, 12);
+      }
+
+      async function fetchState() {
+        if (!pin) return;
+        try {
+          const res = await fetch(`/api/classes/${pin}/state`);
+          if (!res.ok) throw new Error("not found");
+          const data = await res.json();
+          renderSensors(data.last_sensor);
+          aggregateEmotions(data.emotions || []);
+          renderChart();
+          setStatus(`Connected to ${pin}, entries: ${data.emotions?.length || 0}`);
+        } catch (e) {
+          setStatus("Failed to fetch state.", true);
+        }
+      }
+
+      document.getElementById("connectBtn").onclick = () => {
+        pin = document.getElementById("pinInput").value.trim();
+        if (!pin) {
+          setStatus("Please enter a PIN.", true);
+          return;
+        }
+        fetchState();
+        clearInterval(pollTimer);
+        pollTimer = setInterval(fetchState, 5000);
+      };
+    </script>
+  </body>
+</html>

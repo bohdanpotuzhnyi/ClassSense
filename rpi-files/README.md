@@ -64,13 +64,24 @@ Edit `config.ini`:
 id = raspi-lab-01
 
 [server]
+# Single-URL ingest
 url = https://YOUR_SERVER/ingest
-api_key = YOUR_TOKEN
+
+# TODO: check - optional newer flow (commented on purpose):
+# api_base = https://api.classsense.potuzhnyi.com
+# class_pin =
+# auto_create_class = false
+
+# Optional bearer token
+api_key =
 
 [sampling]
 period_seconds = 10
 post_every_n_samples = 1
 ```
+
+- `api_key` is sent as `Authorization: Bearer <api_key>` when provided.
+- TODO: check - the `api_base`/`class_pin` flow is commented out in config and code; enable if the ingest service requires class creation and pin-scoped endpoints.
 
 JSON payload sent to your server (example):
 

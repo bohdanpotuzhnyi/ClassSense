@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ClassSense API Suite</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="topbar">
+        <div class="brand">ClassSense API Suite</div>
+        <button id="themeToggle" class="ghost">Dark</button>
+      </header>
+
+      <section class="card">
+        <h3>Create class</h3>
+        <div class="pin-row">
+          <button id="createClass" class="primary">POST /api/classes</button>
+          <span id="createdPin" class="tag"></span>
+        </div>
+      </section>
+
+      <section class="card">
+        <h3>Ingest sensors</h3>
+        <div class="pin-row">
+          <input id="ingestPin" type="text" maxlength="5" placeholder="Class PIN" />
+          <button id="sendIngest" class="primary">POST /ingest</button>
+        </div>
+        <pre id="ingestPayload" class="code-block"></pre>
+      </section>
+
+      <section class="card">
+        <h3>Get state</h3>
+        <div class="pin-row">
+          <input id="statePin" type="text" maxlength="5" placeholder="Class PIN" />
+          <button id="getState" class="ghost">GET /api/classes/:pin/state</button>
+        </div>
+        <pre id="stateOutput" class="code-block"></pre>
+      </section>
+
+      <section class="card">
+        <h3>Send emotion</h3>
+        <div class="pin-row">
+          <input id="emotionPin" type="text" maxlength="5" placeholder="Class PIN" />
+          <select id="emotionType">
+            <option value="focus">focus</option>
+            <option value="pace">pace</option>
+          </select>
+          <input id="emotionValue" type="text" placeholder="value (e.g. 75 or ok)" />
+          <button id="sendEmotion" class="primary">POST /api/classes/:pin/emotions</button>
+        </div>
+        <pre id="emotionOutput" class="code-block"></pre>
+      </section>
+    </div>
+
+    <script>
+      const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+      const setTheme = (th) => document.documentElement.classList.toggle("dark", th === "dark");
+      let theme = prefersDark ? "dark" : "light";
+      setTheme(theme);
+      document.getElementById("themeToggle").onclick = () => {
+        theme = theme === "dark" ? "light" : "dark";
+        setTheme(theme);
+        document.getElementById("themeToggle").textContent = theme === "dark" ? "Light" : "Dark";
+      };
+
+      const ingestSample = {
+        device_id: "demo-device",
+        timestamp: new Date().toISOString(),
+        sensors: {
+          brightness_lux: 150,
+          eco2_ppm: 620,
+          temperature_c: 22.5,
+          noise_db: 35,
+        },
+        meta: { app: "enviro_client", version: "demo" },
+        class_pin: "",
+      };
+      const ingestPre = document.getElementById("ingestPayload");
+      ingestPre.textContent = JSON.stringify(ingestSample, null, 2);
+
+      document.getElementById("createClass").onclick = async () => {
+        const res = await fetch("/api/classes", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+        const data = await res.json();
+        document.getElementById("createdPin").textContent = data.pin || "";
+      };
+
+      document.getElementById("sendIngest").onclick = async () => {
+        const pin = document.getElementById("ingestPin").value.trim();
+        const payload = JSON.parse(ingestPre.textContent);
+        payload.class_pin = pin;
+        const res = await fetch("/ingest", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+        ingestPre.textContent = JSON.stringify(await res.json(), null, 2);
+      };
+
+      document.getElementById("getState").onclick = async () => {
+        const pin = document.getElementById("statePin").value.trim();
+        const res = await fetch(`/api/classes/${pin}/state`);
+        document.getElementById("stateOutput").textContent = JSON.stringify(await res.json(), null, 2);
+      };
+
+      document.getElementById("sendEmotion").onclick = async () => {
+        const pin = document.getElementById("emotionPin").value.trim();
+        const type = document.getElementById("emotionType").value;
+        const val = document.getElementById("emotionValue").value;
+        const payload = {};
+        payload[type] = isNaN(Number(val)) ? val : Number(val);
+        const res = await fetch(`/api/classes/${pin}/emotions`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        document.getElementById("emotionOutput").textContent = JSON.stringify(await res.json(), null, 2);
+      };
+    </script>
+  </body>
+</html>
