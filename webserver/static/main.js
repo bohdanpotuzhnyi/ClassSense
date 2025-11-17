@@ -2,16 +2,142 @@
   const root = document.getElementById("app");
   const initialDesign = root?.dataset?.design === "buttons" ? "buttons" : "slider";
 
+  const translations = {
+    en: {
+      theme_light: "Light",
+      theme_dark: "Dark",
+      toggle_buttons: "Switch to buttons",
+      toggle_slider: "Switch to slider",
+      hero_eyebrow: "Live classroom pulse",
+      hero_title: "Invite quick, anonymous feedback",
+      hero_body: "Share the link and let students send focus and pace signals in seconds.",
+      pin_placeholder: "Class PIN",
+      connect: "Connect",
+      status_enter_pin: "Enter a class PIN to connect.",
+      status_connected: "Connected to class {pin}",
+      status_pin_not_found: "PIN not found. Check the PIN and retry.",
+      status_connection_lost: "Connection lost or PIN invalid.",
+      status_pin_required: "Set a PIN first.",
+      status_feedback_sent: "Feedback sent.",
+      status_feedback_failed: "Failed to send feedback.",
+      toast_feedback_sent: "Feedback sent",
+      toast_feedback_failed: "Could not send feedback",
+      waiting_eyebrow: "Waiting to connect",
+      waiting_title: "Start by entering a class PIN",
+      waiting_body: "You can switch between slider and buttons at any time.",
+      focus_eyebrow: "Focus check-in",
+      pace_question: "How is the pace right now?",
+      range_label: "0 – 100",
+      range_prompt: "Slide to capture the room's focus level.",
+      low_label: "Low",
+      high_label: "High",
+      send_focus: "Send focus",
+      pace_eyebrow: "Pace feedback",
+      tap_to_send: "Tap to send",
+      pace_fast: "Too fast",
+      pace_fast_sub: "Slow down",
+      pace_overloaded: "Overloaded",
+      pace_overloaded_sub: "Need a pause",
+      pace_ok: "Cruising",
+      pace_ok_sub: "Keep it up",
+      pace_tired: "Tired",
+      pace_tired_sub: "Energy dip",
+      room_snapshot: "Room snapshot",
+      env_signals: "Environment signals",
+      live: "Live",
+      waiting: "Waiting",
+      last_sensor: "Last sensor update: {time}",
+      none: "none",
+      env_high: "high",
+      env_ok: "OK",
+      env_loud: "loud",
+    },
+    "de-ch": {
+      theme_light: "Hell",
+      theme_dark: "Dunkel",
+      toggle_buttons: "Uf Chnöpf wechselä",
+      toggle_slider: "Uf Schieber wechselä",
+      hero_eyebrow: "Live-Klassestimmig",
+      hero_title: "Schnells, anonyms Feedback iihole",
+      hero_body: "Link teile und d'Schüler chönd im Nu Fokus und Tempo melde.",
+      pin_placeholder: "Klasse-PIN",
+      connect: "Verbinde",
+      status_enter_pin: "Gib e Klass-PIN ii zum verbinde.",
+      status_connected: "Mit de Klass {pin} verbunde",
+      status_pin_not_found: "PIN nöd gfunde. Prüef d PIN und versuchs nomol.",
+      status_connection_lost: "Verbindig verlore oder PIN ungültig.",
+      status_pin_required: "Zers e PIN iigäh.",
+      status_feedback_sent: "Feedback gsändet.",
+      status_feedback_failed: "Feedback chas nöd gsendet werde.",
+      toast_feedback_sent: "Feedback gsändet",
+      toast_feedback_failed: "Feedback chas nöd gsendet werde",
+      waiting_eyebrow: "Am warte uf Verbindig",
+      waiting_title: "Fang a mit de Klass-PIN",
+      waiting_body: "Du chasch jederzyt zwüsche Slider und Chnöpf wächsle.",
+      focus_eyebrow: "Fokus-Check-in",
+      pace_question: "Wie isch s Tempo grad?",
+      range_label: "0 – 100",
+      range_prompt: "Schieb und zeig, wie gfühlt s Tempo isch.",
+      low_label: "Niderig",
+      high_label: "Hoch",
+      send_focus: "Fokus schicke",
+      pace_eyebrow: "Tempo-Feedback",
+      tap_to_send: "Tippe zum schicke",
+      pace_fast: "Z schnäll",
+      pace_fast_sub: "Bitte langsamer",
+      pace_overloaded: "Überlade",
+      pace_overloaded_sub: "Bruch e Pause",
+      pace_ok: "Guet im Fluss",
+      pace_ok_sub: "So wiitermache",
+      pace_tired: "Müed",
+      pace_tired_sub: "Energiedip",
+      room_snapshot: "Raum-Übersicht",
+      env_signals: "Umgebigs-Signau",
+      live: "Live",
+      waiting: "Am warte",
+      last_sensor: "Letschti Sensordate: {time}",
+      none: "keini",
+      env_high: "hoog",
+      env_ok: "OK",
+      env_loud: "laut",
+    },
+  };
+
+  const fallbackLang = "en";
+  const supportedLangs = Object.keys(translations);
+  const normalizeLang = (lang) => (lang || "").toLowerCase();
+  const detectLanguage = () => {
+    const stored = localStorage?.getItem?.("lang");
+    if (stored && supportedLangs.includes(normalizeLang(stored))) return normalizeLang(stored);
+    if (typeof navigator === "undefined") return fallbackLang;
+    const preferred = [...(navigator.languages || []), navigator.language].filter(Boolean).map(normalizeLang);
+    for (const lang of preferred) {
+      if (supportedLangs.includes(lang)) return lang;
+      if (lang.startsWith("de") || lang.startsWith("gsw")) return "de-ch";
+    }
+    return fallbackLang;
+  };
+
   const state = {
     design: initialDesign,
     theme: "light",
     pin: "",
-    status: "Enter a class PIN to connect.",
+    status: "",
     env: { temperature: 22, co2: 650, noise: 35, lastUpdated: null },
     connected: false,
     error: null,
     sliderValue: 50,
+    lang: detectLanguage(),
   };
+
+  const t = (key, vars = {}) => {
+    const dict = translations[state.lang] || translations[fallbackLang];
+    const fallbackDict = translations[fallbackLang];
+    const template = dict[key] ?? fallbackDict[key] ?? key;
+    return template.replace(/\{(\w+)\}/g, (_, k) => (vars[k] != null ? vars[k] : `{${k}}`));
+  };
+  document.documentElement?.setAttribute("lang", state.lang);
+  state.status = t("status_enter_pin");
 
   const prefersDark =
     typeof window !== "undefined" &&
@@ -24,7 +150,21 @@
   function setTheme(theme) {
     state.theme = theme;
     document.documentElement.classList.toggle("dark", theme === "dark");
-    $("#themeToggle").textContent = theme === "dark" ? "Light" : "Dark";
+    $("#themeToggle").textContent = theme === "dark" ? t("theme_light") : t("theme_dark");
+  }
+
+  function setLanguage(lang) {
+    if (!supportedLangs.includes(lang)) lang = fallbackLang;
+    state.lang = lang;
+    localStorage?.setItem?.("lang", lang);
+    document.documentElement?.setAttribute("lang", state.lang);
+    // Refresh status copy to match the new language
+    if (state.connected && state.pin) {
+      status(t("status_connected", { pin: state.pin }), !!state.error);
+    } else if (!state.connected && !state.error) {
+      status(t("status_enter_pin"));
+    }
+    render();
   }
 
   function setDesign(design) {
@@ -48,8 +188,8 @@
 
   function envLabel(type, value) {
     if (type === "temperature") return `${Math.round(value)}°C`;
-    if (type === "co2") return value > 600 ? "high" : "OK";
-    if (type === "noise") return value > 45 ? "loud" : "OK";
+    if (type === "co2") return value > 600 ? t("env_high") : t("env_ok");
+    if (type === "noise") return value > 45 ? t("env_loud") : t("env_ok");
     return "";
   }
 
@@ -75,12 +215,12 @@
       state.pin = pin;
       state.connected = true;
       localStorage.setItem("class_pin", pin);
-      status(`Connected to class ${pin}`);
+      status(t("status_connected", { pin }));
       startPolling();
       render();
     } catch (e) {
       state.connected = false;
-      status("PIN not found. Check the PIN and retry.", true);
+      status(t("status_pin_not_found"), true);
     }
   }
 
@@ -100,7 +240,7 @@
       renderEnv();
     } catch (e) {
       state.connected = false;
-      status("Connection lost or PIN invalid.", true);
+      status(t("status_connection_lost"), true);
       render();
     }
   }
@@ -114,7 +254,7 @@
 
   async function sendEmotion(payload) {
     if (!state.pin) {
-      status("Set a PIN first.", true);
+      status(t("status_pin_required"), true);
       return;
     }
     const endpoint = `/api/classes/${state.pin}/emotions`;
@@ -124,11 +264,11 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      status("Feedback sent.");
-      showToast("Feedback sent");
+      status(t("status_feedback_sent"));
+      showToast(t("toast_feedback_sent"));
     } catch (e) {
-      status("Failed to send feedback.", true);
-      showToast("Could not send feedback");
+      status(t("status_feedback_failed"), true);
+      showToast(t("toast_feedback_failed"));
     }
   }
 
@@ -136,13 +276,14 @@
     const envEl = $("#env");
     if (!envEl) return;
     const { temperature, co2, noise, lastUpdated } = state.env;
+    const lastValue = lastUpdated || t("none");
     envEl.innerHTML = `
       <div class="env-row fancy">
         ${badge("°C", envLabel("temperature", temperature))}
         ${badge("CO₂", envLabel("co2", co2))}
         ${badge("🔊", envLabel("noise", noise))}
       </div>
-      <div class="muted">Last sensor update: ${lastUpdated || "none"}</div>
+      <div class="muted">${t("last_sensor", { time: lastValue })}</div>
     `;
   }
 
@@ -151,9 +292,9 @@
     if (!state.connected) {
       controls.innerHTML = `
         <div class="placeholder-card">
-          <div class="eyebrow">Waiting to connect</div>
-          <div class="placeholder-title">Start by entering a class PIN</div>
-          <p class="muted">You can switch between slider and buttons at any time.</p>
+          <div class="eyebrow">${t("waiting_eyebrow")}</div>
+          <div class="placeholder-title">${t("waiting_title")}</div>
+          <p class="muted">${t("waiting_body")}</p>
         </div>
       `;
       return;
@@ -163,27 +304,43 @@
         <div class="control-card focus-card">
           <div class="control-header">
             <div>
-              <div class="eyebrow">Focus check-in</div>
-              <h2 class="control-title">How is the pace right now?</h2>
+              <div class="eyebrow">${t("focus_eyebrow")}</div>
+              <h2 class="control-title">${t("pace_question")}</h2>
             </div>
-            <span class="pill muted">0 – 100</span>
+            <span class="pill muted">${t("range_label")}</span>
           </div>
           <div class="focus-visual">
-            <div class="emoji-bubble">${emoji(state.sliderValue)}</div>
-            <div class="focus-score">${state.sliderValue}</div>
-            <div class="muted">Slide to capture the room's focus level.</div>
+            <div id="sliderEmoji" class="emoji-bubble">${emoji(state.sliderValue)}</div>
+            <div id="sliderScore" class="focus-score">${state.sliderValue}</div>
+            <div class="muted">${t("range_prompt")}</div>
           </div>
           <div class="slider-wrap">
-            <input type="range" id="slider" min="0" max="100" step="1" value="${state.sliderValue}" />
-            <div class="labels"><span>Low</span><span>${state.sliderValue}</span><span>High</span></div>
+            <input type="range" id="sliderInput" min="0" max="100" step="1" value="${state.sliderValue}" />
+            <div class="labels"><span>${t("low_label")}</span><span id="sliderMidLabel">${state.sliderValue}</span><span>${t("high_label")}</span></div>
           </div>
-          <button id="sendFocus" class="primary wide">Send focus</button>
+          <button id="sendFocus" class="primary wide">${t("send_focus")}</button>
         </div>
       `;
-      $("#slider").oninput = (e) => {
-        state.sliderValue = Number(e.target.value);
-        renderControls();
+
+      const sliderEl = $("#sliderInput");
+      const emojiEl = $("#sliderEmoji");
+      const scoreEl = $("#sliderScore");
+      const midLabelEl = $("#sliderMidLabel");
+
+      const updateSliderUI = (val) => {
+        if (scoreEl) scoreEl.textContent = val;
+        if (emojiEl) emojiEl.textContent = emoji(val);
+        if (midLabelEl) midLabelEl.textContent = val;
       };
+
+      if (sliderEl) {
+        sliderEl.oninput = (e) => {
+          state.sliderValue = Number(e.target.value);
+          updateSliderUI(state.sliderValue);
+        };
+      }
+
+      updateSliderUI(state.sliderValue);
       $("#sendFocus").onclick = () => sendEmotion({ focus: state.sliderValue });
     } else {
       // Buttons design (pace)
@@ -191,28 +348,28 @@
         <div class="control-card pace-card">
           <div class="control-header">
             <div>
-              <div class="eyebrow">Pace feedback</div>
-              <h2 class="control-title">How is the pace right now?</h2>
+              <div class="eyebrow">${t("pace_eyebrow")}</div>
+              <h2 class="control-title">${t("pace_question")}</h2>
             </div>
-            <span class="pill muted">Tap to send</span>
+            <span class="pill muted">${t("tap_to_send")}</span>
           </div>
           <div class="pace-main">
             <div class="pace-grid">
               <button class="pace-tile pace-fast" data-key="too-fast">
-                <span class="tile-label">Too fast</span>
-                <span class="tile-sub">Slow down</span>
+                <span class="tile-label">${t("pace_fast")}</span>
+                <span class="tile-sub">${t("pace_fast_sub")}</span>
               </button>
               <button class="pace-tile pace-overloaded" data-key="overloaded">
-                <span class="tile-label">Overloaded</span>
-                <span class="tile-sub">Need a pause</span>
+                <span class="tile-label">${t("pace_overloaded")}</span>
+                <span class="tile-sub">${t("pace_overloaded_sub")}</span>
               </button>
               <button class="pace-tile pace-ok" data-key="ok">
-                <span class="tile-label">Cruising</span>
-                <span class="tile-sub">Keep it up</span>
+                <span class="tile-label">${t("pace_ok")}</span>
+                <span class="tile-sub">${t("pace_ok_sub")}</span>
               </button>
               <button class="pace-tile pace-tired" data-key="tired">
-                <span class="tile-label">Tired</span>
-                <span class="tile-sub">Energy dip</span>
+                <span class="tile-label">${t("pace_tired")}</span>
+                <span class="tile-sub">${t("pace_tired_sub")}</span>
               </button>
             </div>
           </div>
@@ -242,21 +399,22 @@
         <header class="topbar">
           <div class="brand">ClassSense</div>
           <div class="actions">
-            <button id="designToggle" class="ghost">${state.design === "slider" ? "Switch to buttons" : "Switch to slider"}</button>
-            <button id="themeToggle" class="ghost">${state.theme === "dark" ? "Light" : "Dark"}</button>
+            <button id="langToggle" class="ghost">${state.lang === "de-ch" ? "DE" : "EN"}</button>
+            <button id="designToggle" class="ghost">${state.design === "slider" ? t("toggle_buttons") : t("toggle_slider")}</button>
+            <button id="themeToggle" class="ghost">${state.theme === "dark" ? t("theme_light") : t("theme_dark")}</button>
           </div>
         </header>
 
         <section class="card hero-card">
           <div class="hero-copy">
-            <div class="eyebrow">Live classroom pulse</div>
-            <h1 class="hero-title">Invite quick, anonymous feedback</h1>
-            <p class="muted">Share the link and let students send focus and pace signals in seconds.</p>
+            <div class="eyebrow">${t("hero_eyebrow")}</div>
+            <h1 class="hero-title">${t("hero_title")}</h1>
+            <p class="muted">${t("hero_body")}</p>
           </div>
           <div class="pin-stack">
             <div class="pin-row">
-              <input id="pinInput" type="text" maxlength="5" placeholder="Class PIN" value="${state.pin}" />
-              <button id="connectBtn" class="primary">Connect</button>
+              <input id="pinInput" type="text" maxlength="5" placeholder="${t("pin_placeholder")}" value="${state.pin}" />
+              <button id="connectBtn" class="primary">${t("connect")}</button>
             </div>
             <div id="status" class="status">${state.status}</div>
           </div>
@@ -269,10 +427,10 @@
           <div class="env-col">
             <div class="section-heading">
               <div>
-                <div class="eyebrow">Room snapshot</div>
-                <h3 class="control-title small">Environment signals</h3>
+                <div class="eyebrow">${t("room_snapshot")}</div>
+                <h3 class="control-title small">${t("env_signals")}</h3>
               </div>
-              <div class="pill muted">${state.connected ? "Live" : "Waiting"}</div>
+              <div class="pill muted">${state.connected ? t("live") : t("waiting")}</div>
             </div>
             <div id="env" class="env-panel"></div>
           </div>
@@ -284,6 +442,7 @@
       const pin = ($("#pinInput").value || "").trim();
       verifyPin(pin);
     };
+    $("#langToggle").onclick = () => setLanguage(state.lang === "de-ch" ? "en" : "de-ch");
     $("#designToggle").onclick = () => setDesign(state.design === "slider" ? "buttons" : "slider");
     setTheme(state.theme);
     $("#themeToggle").onclick = () => setTheme(state.theme === "dark" ? "light" : "dark");
