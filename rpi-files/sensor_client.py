@@ -287,7 +287,7 @@ def post_json(url, api_key, payload, timeout=5):
 # TODO: check - keep this helper commented until class code creation is required.
 # def create_class(api_base, api_key, metadata=None, timeout=5):
 #     metadata = metadata or {}
-#     api_base = api_base.rstrip("/")
+#     api_base = api_base.rstrip("/") 
 #     url = f"{api_base}/api/classes"
 #     headers = {"Content-Type": "application/json"}
 #     if api_key:
