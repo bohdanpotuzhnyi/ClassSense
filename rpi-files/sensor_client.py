@@ -112,7 +112,7 @@ def get_cpu_temperature():
 
 # Tuning factor for compensation. Decrease this number to adjust the
 # temperature down, and increase to adjust up.
-CPU_TEMP_FACTOR = 4
+CPU_TEMP_FACTOR = 1.2
 _cpu_temps = []
 
 
@@ -235,13 +235,13 @@ class LCD:
         else:
             noise_str = f"{noise_db:5.1f}"
 
-        draw.text((4, y), f"lux {lux_str}", font=self.font, fill=(200, 200, 200))
+        draw.text((4, y), f"bri {lux_str} lux", font=self.font, fill=(200, 200, 200))
         y += line_gap
-        draw.text((4, y), f"ppm {eco2_str}", font=self.font, fill=(200, 200, 200))
+        draw.text((4, y), f"CO2 {eco2_str} ppm", font=self.font, fill=(200, 200, 200))
         y += line_gap
-        draw.text((4, y), f"°C  {temp_str}", font=self.font, fill=(200, 200, 200))
+        draw.text((4, y), f"tem  {temp_str} °C", font=self.font, fill=(200, 200, 200))
         y += line_gap
-        draw.text((4, y), f"db  {noise_str}", font=self.font, fill=(200, 200, 200))
+        draw.text((4, y), f"no  {noise_str} db", font=self.font, fill=(200, 200, 200))
 
         self.disp.display(img)
 
