@@ -278,26 +278,26 @@ def post_json(url, api_key, payload, timeout=5):
     if api_key:
         headers["Authorization"] = f"Bearer {api_key}"
     # TODO: check
-    # if extra_headers:
-    #     headers.update(extra_headers)
+    if extra_headers:
+        headers.update(extra_headers)
     r = requests.post(url, data=json.dumps(payload), headers=headers, timeout=timeout)
     r.raise_for_status()
     return r
 
 # TODO: check - keep this helper commented until class code creation is required.
-# def create_class(api_base, api_key, metadata=None, timeout=5):
-#     metadata = metadata or {}
-#     api_base = api_base.rstrip("/") 
-#     url = f"{api_base}/api/classes"
-#     headers = {"Content-Type": "application/json"}
-#     if api_key:
-#         headers["Authorization"] = f"Bearer {api_key}"
-#     r = requests.post(url, data=json.dumps(metadata), headers=headers, timeout=timeout)
-#     r.raise_for_status()
-#     data = r.json()
-#     if not isinstance(data, dict) or "pin" not in data:
-#         raise RuntimeError("create_class: unexpected response")
-#     return str(data["pin"])
+def create_class(api_base, api_key, metadata=None, timeout=5):
+    metadata = metadata or {}
+    api_base = api_base.rstrip("/") 
+    url = f"{api_base}/api/classes"
+    headers = {"Content-Type": "application/json"}
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+    r = requests.post(url, data=json.dumps(metadata), headers=headers, timeout=timeout)
+    r.raise_for_status()
+    data = r.json()
+    if not isinstance(data, dict) or "pin" not in data:
+        raise RuntimeError("create_class: unexpected response")
+    return str(data["pin"])
 
 
 # Main loop
@@ -309,28 +309,28 @@ def main():
     class_pin = cfg.get("server", "class_pin", fallback="").strip()
     api_key = cfg.get("server", "api_key", fallback="")
     # TODO: check
-    # api_base = cfg.get("server", "api_base", fallback="").rstrip("/")
-    # class_pin = cfg.get("server", "class_pin", fallback="").strip()
-    # auto_create_class = cfg.getboolean("server", "auto_create_class", fallback=False)
+    api_base = cfg.get("server", "api_base", fallback="").rstrip("/")
+    class_pin = cfg.get("server", "class_pin", fallback="").strip()
+    auto_create_class = cfg.getboolean("server", "auto_create_class", fallback=False)
     api_key = cfg.get("server", "api_key", fallback="")
     period_s = cfg.getint("sampling", "period_seconds", fallback=10)
     post_every_n = cfg.getint("sampling", "post_every_n_samples", fallback=1)
 
     # TODO: check - Newer API layout (api_base + class_pin)
-    # if api_base and not post_url:
-    #     post_url = f"{api_base}/ingest"
-    # if api_base and auto_create_class and not class_pin:
-    #     try:
-    #         metadata = {"device_id": device_id}
-    #         class_pin = create_class(api_base, api_key, metadata=metadata)
-    #         log.info(f"Created class {class_pin} via /api/classes.")
-    #     except Exception as e:
-    #         log.error(f"Auto class creation failed: {e}")
-    # ingest_headers = {}
-    # if class_pin:
-    #     ingest_headers["X-Class-Pin"] = class_pin
-    #     if api_base:
-    #         post_url = f"{api_base}/api/classes/{class_pin}/ingest"
+    if api_base and not post_url:
+        post_url = f"{api_base}/ingest"
+    if api_base and auto_create_class and not class_pin:
+        try:
+            metadata = {"device_id": device_id}
+            class_pin = create_class(api_base, api_key, metadata=metadata)
+            log.info(f"Created class {class_pin} via /api/classes.")
+        except Exception as e:
+            log.error(f"Auto class creation failed: {e}")
+    ingest_headers = {}
+    if class_pin:
+        ingest_headers["X-Class-Pin"] = class_pin
+        if api_base:
+            post_url = f"{api_base}/api/classes/{class_pin}/ingest"
 
     # Init sensors
     try:
