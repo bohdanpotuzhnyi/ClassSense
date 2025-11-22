@@ -306,6 +306,8 @@ def main():
 
     device_id = cfg.get("device", "id", fallback=socket.gethostname())
     post_url = cfg.get("server", "url", fallback="")
+    class_pin = cfg.get("server", "class_pin", fallback="").strip()
+    api_key = cfg.get("server", "api_key", fallback="")
     # TODO: check
     # api_base = cfg.get("server", "api_base", fallback="").rstrip("/")
     # class_pin = cfg.get("server", "class_pin", fallback="").strip()
@@ -406,6 +408,7 @@ def main():
         payload = {
             "device_id": device_id,
             "timestamp": now,
+            "class_pin": class_pin,
             "sensors": {
                 "brightness_lux": lux,
                 "eco2_ppm": eco2_ppm,
