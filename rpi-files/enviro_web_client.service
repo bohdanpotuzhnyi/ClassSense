@@ -7,9 +7,9 @@ Wants=network-online.target
 [Service]
 Type=simple
 User=pi
-WorkingDirectory=/home/pi/enviro_client
+WorkingDirectory=/home/thrombus77/ClassSense/rpi-files
 # Use the Python from your virtual environment
-ExecStart=/home/pi/enviro_client/venv/bin/python /home/pi/enviro_client/sensor_client.py
+ExecStart=/home/thrombus77/ClassSense/rpi-files/venv/bin/python /home/thrombus77/ClassSense/rpi-files/sensor_client.py
 Restart=on-failure
 RestartSec=5
 
