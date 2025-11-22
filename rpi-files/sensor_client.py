@@ -273,11 +273,10 @@ def measure_noise(duration=0.4, samplerate=16000):
 
 
 # HTTP POST
-def post_json(url, api_key, payload, timeout=5):
+def post_json(url, api_key, payload, timeout=5, extra_headers=None):
     headers = {"Content-Type": "application/json"}
     if api_key:
         headers["Authorization"] = f"Bearer {api_key}"
-    # TODO: check
     if extra_headers:
         headers.update(extra_headers)
     r = requests.post(url, data=json.dumps(payload), headers=headers, timeout=timeout)
@@ -424,7 +423,7 @@ def main():
         # POST
         try:
             if post_url and (sample_idx % post_every_n == 0):
-                post_json(post_url, api_key, payload)
+                post_json(post_url, api_key, payload, extra_headers=ingest_headers)
                 log.info(f"Posted sample {sample_idx} to server.")
         except Exception as e:
             log.warning(f"POST failed: {e}")
