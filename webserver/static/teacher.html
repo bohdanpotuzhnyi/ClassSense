@@ -48,6 +48,7 @@
       <header class="topbar">
         <div class="brand">Teacher Dashboard</div>
         <div class="actions">
+          <button id="downloadState" class="ghost" disabled>Download class state</button>
           <button id="themeToggle" class="ghost">Dark</button>
         </div>
       </header>
@@ -104,6 +105,7 @@
       const lastSensorEl = document.getElementById("lastSensor");
       const signalCanvas = document.getElementById("signalChart");
       const ctx = signalCanvas.getContext("2d");
+      const downloadBtn = document.getElementById("downloadState");
 
       // Simple in-memory histories (per minute) for charting
       const co2History = new Map(); // minuteKey -> ppm
@@ -370,8 +372,32 @@
           aggregateEmotions(data.emotions || []);
           renderChart();
           setStatus(`Connected to ${pin}, entries: ${data.emotions?.length || 0}`);
+          if (downloadBtn) downloadBtn.disabled = false;
         } catch (e) {
           setStatus("Failed to fetch state.", true);
+          if (downloadBtn) downloadBtn.disabled = true;
+        }
+      }
+
+      async function downloadClassState() {
+        if (!pin) {
+          setStatus("Please enter a PIN.", true);
+          return;
+        }
+        try {
+          const res = await fetch(`/api/classes/${pin}/state`);
+          if (!res.ok) throw new Error("not found");
+          const data = await res.json();
+          const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `class-${pin}-state.json`;
+          a.click();
+          URL.revokeObjectURL(url);
+          setStatus(`Downloaded state for ${pin}`);
+        } catch (e) {
+          setStatus("Could not download class state.", true);
         }
       }
 
@@ -385,6 +411,7 @@
         clearInterval(pollTimer);
         pollTimer = setInterval(fetchState, 5000);
       };
+      if (downloadBtn) downloadBtn.onclick = downloadClassState;
     </script>
   </body>
 </html>

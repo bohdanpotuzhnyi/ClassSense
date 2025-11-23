@@ -11,6 +11,8 @@
       hero_eyebrow: "Live classroom pulse",
       hero_title: "Invite quick, anonymous feedback",
       hero_body: "Share the link and let students send focus and pace signals in seconds.",
+      forms_buttons_link: "Buttons form",
+      forms_slider_link: "Slider form",
       pin_placeholder: "Class PIN",
       connect: "Connect",
       status_enter_pin: "Enter a class PIN to connect.",
@@ -22,6 +24,7 @@
       status_feedback_failed: "Failed to send feedback.",
       toast_feedback_sent: "Feedback sent",
       toast_feedback_failed: "Could not send feedback",
+      forms_link_pending: "Form link coming soon.",
       waiting_eyebrow: "Waiting to connect",
       waiting_title: "Start by entering a class PIN",
       waiting_body: "You can switch between slider and buttons at any time.",
@@ -60,6 +63,8 @@
       hero_eyebrow: "Live-Klassestimmig",
       hero_title: "Schnells, anonyms Feedback iihole",
       hero_body: "Link teile und d'Schüler chönd im Nu Fokus und Tempo melde.",
+      forms_buttons_link: "Chnöpf-Form",
+      forms_slider_link: "Slider-Form",
       pin_placeholder: "Klasse-PIN",
       connect: "Verbinde",
       status_enter_pin: "Gib e Klass-PIN ii zum verbinde.",
@@ -71,6 +76,7 @@
       status_feedback_failed: "Feedback chas nöd gsendet werde.",
       toast_feedback_sent: "Feedback gsändet",
       toast_feedback_failed: "Feedback chas nöd gsendet werde",
+      forms_link_pending: "Form-Link chunnt no.",
       waiting_eyebrow: "Am warte uf Verbindig",
       waiting_title: "Fang a mit de Klass-PIN",
       waiting_body: "Du chasch jederzyt zwüsche Slider und Chnöpf wächsle.",
@@ -118,6 +124,21 @@
     return fallbackLang;
   };
 
+  const nowMs = () => {
+    if (typeof performance !== "undefined" && performance.now) return performance.now();
+    return Date.now();
+  };
+
+  const entryTimes = {
+    slider: nowMs(),
+    buttons: nowMs(),
+  };
+
+  const formLinks = {
+    buttons: "#buttons-form",
+    slider: "#slider-form",
+  };
+
   const state = {
     design: initialDesign,
     theme: "light",
@@ -153,6 +174,16 @@
     $("#themeToggle").textContent = theme === "dark" ? t("theme_light") : t("theme_dark");
   }
 
+  function resetEntryTimer(design) {
+    entryTimes[design] = nowMs();
+  }
+
+  function withResponseTime(payload) {
+    const designKey = state.design === "slider" ? "slider_time_ms" : "buttons_time_ms";
+    const elapsed = Math.max(Math.round(nowMs() - (entryTimes[state.design] || nowMs())), 0);
+    return { ...payload, [designKey]: elapsed };
+  }
+
   function setLanguage(lang) {
     if (!supportedLangs.includes(lang)) lang = fallbackLang;
     state.lang = lang;
@@ -169,12 +200,31 @@
 
   function setDesign(design) {
     state.design = design;
+    resetEntryTimer(design);
     const target = design === "buttons" ? "/buttons" : "/slider";
     if (window.location.pathname !== target && window.history?.pushState) {
       window.history.pushState({}, "", target);
     }
     if (root) root.dataset.design = design;
     render();
+  }
+
+  if (typeof document !== "undefined") {
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") resetEntryTimer(state.design);
+    });
+  }
+  if (typeof window !== "undefined") {
+    window.addEventListener("focus", () => resetEntryTimer(state.design));
+  }
+
+  function openFormsLink() {
+    const url = state.design === "slider" ? formLinks.slider : formLinks.buttons;
+    if (!url || url.startsWith("#")) {
+      showToast(t("forms_link_pending"));
+      return;
+    }
+    window.open(url, "_blank", "noopener");
   }
 
   function badge(label, value) {
@@ -258,14 +308,16 @@
       return;
     }
     const endpoint = `/api/classes/${state.pin}/emotions`;
+    const timedPayload = withResponseTime(payload);
     try {
       await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(timedPayload),
       });
       status(t("status_feedback_sent"));
       showToast(t("toast_feedback_sent"));
+      resetEntryTimer(state.design);
     } catch (e) {
       status(t("status_feedback_failed"), true);
       showToast(t("toast_feedback_failed"));
@@ -400,6 +452,7 @@
           <div class="brand">ClassSense</div>
           <div class="actions">
             <button id="langToggle" class="ghost">${state.lang === "de-ch" ? "DE" : "EN"}</button>
+            <button id="formsLink" class="ghost">${state.design === "slider" ? t("forms_slider_link") : t("forms_buttons_link")}</button>
             <button id="designToggle" class="ghost">${state.design === "slider" ? t("toggle_buttons") : t("toggle_slider")}</button>
             <button id="themeToggle" class="ghost">${state.theme === "dark" ? t("theme_light") : t("theme_dark")}</button>
           </div>
@@ -443,6 +496,7 @@
       verifyPin(pin);
     };
     $("#langToggle").onclick = () => setLanguage(state.lang === "de-ch" ? "en" : "de-ch");
+    $("#formsLink").onclick = () => openFormsLink();
     $("#designToggle").onclick = () => setDesign(state.design === "slider" ? "buttons" : "slider");
     setTheme(state.theme);
     $("#themeToggle").onclick = () => setTheme(state.theme === "dark" ? "light" : "dark");
@@ -451,6 +505,7 @@
   }
 
   // Init
+  resetEntryTimer(state.design);
   if (root) render();
 })();
   function showToast(message) {
