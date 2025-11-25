@@ -955,6 +955,11 @@
         statusEl.className = isErr ? "status error" : "status";
       }
 
+      function setStatusCompact(msg) {
+        const msgEl = document.getElementById("cMessage");
+        if (msgEl) msgEl.textContent = msg;
+      }
+
       function renderSensors(sensor) {
         const s = sensor?.sensors || {};
         const statusFor = (type, val) => {
@@ -1220,6 +1225,7 @@
           renderChart();
           renderSummary(data);
           setStatus(`Connected to ${pin}, entries: ${data.emotions?.length || 0}`);
+          setStatusCompact(`Connected to ${pin}`);
           const sensorPill = document.getElementById("sensorPill");
           if (sensorPill) sensorPill.textContent = "Live";
           const livePill = document.getElementById("livePill");
@@ -1228,6 +1234,7 @@
           renderCompact(data);
         } catch (e) {
           setStatus("Failed to fetch state.", true);
+          setStatusCompact("Failed to fetch state.");
           if (downloadBtn) downloadBtn.disabled = true;
         }
       }
@@ -1522,45 +1529,30 @@
         }
       }
 
-      document.getElementById("connectBtn").onclick = () => {
-        const entered = (document.getElementById("pinInput").value || "").trim();
-        if (!entered) {
+      function connectWithPin(entered) {
+        const pinVal = (entered || "").trim();
+        if (!pinVal) {
           setStatus("Please enter a PIN.", true);
+          setStatusCompact("Please enter a PIN.");
           return;
         }
-        setPin(entered);
-        localStorage.setItem("class_pin", entered);
-        fetchState();
+        setPin(pinVal);
+        localStorage.setItem("class_pin", pinVal);
+        setStatusCompact("Connecting…");
+        fetchState().catch(() => {});
         clearInterval(pollTimer);
         pollTimer = setInterval(fetchState, 5000);
+      }
+
+      document.getElementById("connectBtn").onclick = () => {
+        const entered = (document.getElementById("pinInput").value || "").trim();
+        connectWithPin(entered);
       };
       if (cConnectBtn) {
-        cConnectBtn.onclick = () => {
-          const entered = (cPinInput?.value || "").trim();
-          if (!entered) {
-            setStatus("Please enter a PIN.", true);
-            return;
-          }
-          setPin(entered);
-          localStorage.setItem("class_pin", entered);
-          fetchState();
-          clearInterval(pollTimer);
-          pollTimer = setInterval(fetchState, 5000);
-        };
+        cConnectBtn.onclick = () => connectWithPin(cPinInput?.value || "");
       }
       if (cConnectBtnInline) {
-        cConnectBtnInline.onclick = () => {
-          const entered = (cPinInputInline?.value || "").trim();
-          if (!entered) {
-            setStatus("Please enter a PIN.", true);
-            return;
-          }
-          setPin(entered);
-          localStorage.setItem("class_pin", entered);
-          fetchState();
-          clearInterval(pollTimer);
-          pollTimer = setInterval(fetchState, 5000);
-        };
+        cConnectBtnInline.onclick = () => connectWithPin(cPinInputInline?.value || "");
       }
       if (downloadBtn) downloadBtn.onclick = downloadClassState;
       const savedPin = localStorage.getItem("class_pin");
