@@ -55,6 +55,56 @@
       env_ok: "OK",
       env_loud: "loud",
     },
+    de: {
+      theme_light: "Hell",
+      theme_dark: "Dunkel",
+      toggle_buttons: "Zu Buttons wechseln",
+      toggle_slider: "Zu Schieberegler wechseln",
+      hero_eyebrow: "Live-Klassenstatus",
+      hero_title: "Schnelles, anonymes Feedback einholen",
+      hero_body: "Link teilen und die Klasse kann Fokus und Tempo in Sekunden melden.",
+      pin_placeholder: "Klassen-PIN",
+      connect: "Verbinden",
+      status_enter_pin: "Gib eine Klassen-PIN ein, um zu verbinden.",
+      status_connected: "Mit Klasse {pin} verbunden",
+      status_pin_not_found: "PIN nicht gefunden. Prüfe die PIN und versuche es erneut.",
+      status_connection_lost: "Verbindung verloren oder PIN ungültig.",
+      status_pin_required: "Bitte zuerst eine PIN eingeben.",
+      status_feedback_sent: "Feedback gesendet.",
+      status_feedback_failed: "Feedback konnte nicht gesendet werden.",
+      toast_feedback_sent: "Feedback gesendet",
+      toast_feedback_failed: "Feedback konnte nicht gesendet werden",
+      forms_link_pending: "Formular-Link folgt.",
+      waiting_eyebrow: "Warten auf Verbindung",
+      waiting_title: "Starte mit der Klassen-PIN",
+      waiting_body: "Du kannst jederzeit zwischen Slider und Buttons wechseln.",
+      focus_eyebrow: "Fokus-Check-in",
+      pace_question: "Wie ist das Tempo gerade?",
+      range_label: "0 – 100",
+      range_prompt: "Schieb und zeig, wie sich das Tempo anfühlt.",
+      low_label: "Niedrig",
+      high_label: "Hoch",
+      send_focus: "Fokus senden",
+      pace_eyebrow: "Tempo-Feedback",
+      tap_to_send: "Tippen zum Senden",
+      pace_fast: "Zu schnell",
+      pace_fast_sub: "Bitte langsamer",
+      pace_overloaded: "Überlastet",
+      pace_overloaded_sub: "Brauche eine Pause",
+      pace_ok: "Gut im Flow",
+      pace_ok_sub: "So weitermachen",
+      pace_tired: "Müde",
+      pace_tired_sub: "Energietief",
+      room_snapshot: "Raum-Übersicht",
+      env_signals: "Umgebungs-Signale",
+      live: "Live",
+      waiting: "Warten",
+      last_sensor: "Letztes Sensor-Update: {time}",
+      none: "keins",
+      env_high: "hoch",
+      env_ok: "OK",
+      env_loud: "laut",
+    },
     "de-ch": {
       theme_light: "Hell",
       theme_dark: "Dunkel",
@@ -112,6 +162,11 @@
   const fallbackLang = "en";
   const supportedLangs = Object.keys(translations);
   const normalizeLang = (lang) => (lang || "").toLowerCase();
+  const nextLang = (lang) => {
+    const order = ["en", "de", "de-ch"];
+    const idx = order.indexOf(lang);
+    return order[(idx + 1) % order.length] || "en";
+  };
   const detectLanguage = () => {
     const stored = localStorage?.getItem?.("lang");
     if (stored && supportedLangs.includes(normalizeLang(stored))) return normalizeLang(stored);
@@ -229,7 +284,7 @@
 
   function badge(label, value) {
     return `
-      <div class="env-badge elevated">
+      <div class="env-badge">
         <div class="env-icon">${label}</div>
         <div class="env-value">${value}</div>
       </div>
@@ -446,12 +501,14 @@
       if (!state.connected) verifyPin(savedPin);
     }
 
+    const langLabel = { en: "EN", de: "DE", "de-ch": "CH" }[state.lang] || "EN";
+
     root.innerHTML = `
       <div class="page">
         <header class="topbar">
           <div class="brand">ClassSense</div>
           <div class="actions">
-            <button id="langToggle" class="ghost">${state.lang === "de-ch" ? "DE" : "EN"}</button>
+            <button id="langToggle" class="ghost">${langLabel}</button>
             <button id="formsLink" class="ghost">${state.design === "slider" ? t("forms_slider_link") : t("forms_buttons_link")}</button>
             <button id="designToggle" class="ghost">${state.design === "slider" ? t("toggle_buttons") : t("toggle_slider")}</button>
             <button id="themeToggle" class="ghost">${state.theme === "dark" ? t("theme_light") : t("theme_dark")}</button>
@@ -495,7 +552,7 @@
       const pin = ($("#pinInput").value || "").trim();
       verifyPin(pin);
     };
-    $("#langToggle").onclick = () => setLanguage(state.lang === "de-ch" ? "en" : "de-ch");
+    $("#langToggle").onclick = () => setLanguage(nextLang(state.lang));
     $("#formsLink").onclick = () => openFormsLink();
     $("#designToggle").onclick = () => setDesign(state.design === "slider" ? "buttons" : "slider");
     setTheme(state.theme);

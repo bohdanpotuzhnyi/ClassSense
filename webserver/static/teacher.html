@@ -6,6 +6,337 @@
     <title>ClassSense Teacher Dashboard</title>
     <link rel="stylesheet" href="styles.css" />
     <style>
+      /* === Shared tokens (aligns regular with compact) === */
+      :root {
+        --brand: #0b5e8a;
+        --ok: #95c11f;
+        --danger: #ef4444;
+        --warning: #f59e0b;
+        --muted: #64748b;
+        --border: #e5e7eb;
+        --card: #ffffff;
+        --shadow: 0 14px 30px rgba(15, 23, 42, 0.1);
+      }
+
+      /* Page + cards look like compact */
+      body.teacher-shell:not(.compact-mode) {
+        background: #ffffff;
+        color: #0f172a;
+      }
+      body.teacher-shell:not(.compact-mode) .page {
+        background: #fff;
+        border: 1px solid var(--border);
+        box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
+        border-radius: 20px;
+        padding: 18px;
+      }
+      body.teacher-shell:not(.compact-mode) .card {
+        background: #fff;
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow);
+        border-radius: 18px;
+        padding: 16px 18px;
+      }
+
+      /* Topbar + brand */
+      .topbar .brand {
+        color: var(--brand);
+        font-weight: 700;
+        letter-spacing: 0.02em;
+      }
+
+      /* Buttons */
+      button.primary {
+        background: var(--brand);
+        color: #fff;
+        border: 1px solid rgba(0, 0, 0, 0.06);
+        border-radius: 12px;
+        padding: 10px 14px;
+        font-weight: 600;
+      }
+      button.ghost {
+        background: #fff;
+        color: #0f172a;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 8px 12px;
+      }
+
+      section.card + section.card {
+        margin-top: 16px;
+      }
+
+      .section-heading {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      /* Eyebrow + small titles */
+      .eyebrow {
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+        font-size: 11px;
+        font-weight: 600;
+        color: #94a3b8;
+      }
+      .control-title.small,
+      .card h3 {
+        font-size: 18px;
+        margin: 2px 0 6px;
+      }
+
+      /* Pill (used for Live/Waiting & status) */
+      .pill,
+      .status {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: #fff;
+        color: #0f172a;
+        font-size: 12px;
+      }
+      .status.error {
+        border-color: #fecaca;
+        background: #fff1f2;
+        color: #991b1b;
+      }
+
+      /* Sensor badges -> compact tile look */
+      .env-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 14px;
+        margin-top: 6px;
+      }
+      .env-badge {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 10px 12px;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        background: #f8fafc;
+      }
+      .env-icon {
+        width: 28px;
+        text-align: center;
+        font-size: 18px;
+        color: var(--muted);
+      }
+      .env-value {
+        margin-left: auto;
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .env-badge::after {
+        content: "";
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        margin-left: 10px;
+        background: #e2e8f0;
+        box-shadow: 0 0 0 2px rgba(148, 163, 184, 0.35);
+      }
+      .env-badge.good::after {
+        background: var(--ok);
+        box-shadow: 0 0 0 2px rgba(149, 193, 31, 0.35);
+      }
+      .env-badge.warning::after {
+        background: var(--warning);
+        box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.3);
+      }
+      .env-badge.danger::after {
+        background: var(--danger);
+        box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.3);
+      }
+
+      /* “Latest sensor snapshot” footer */
+      .muted {
+        color: #64748b;
+        font-size: 13px;
+      }
+
+      /* Chart card spacing + legibility */
+      .chart-card h4 {
+        margin: 0 0 10px;
+        font-size: 16px;
+      }
+      canvas {
+        height: 260px;
+      }
+      .legend {
+        font-size: 12px;
+        color: #64748b;
+      }
+
+      /* === Summary card === */
+      .summary-card {
+        padding: 16px 18px;
+      }
+      .summary-grid {
+        display: grid;
+        grid-template-columns: minmax(280px, 420px) 1fr;
+        gap: 18px;
+        align-items: center;
+      }
+      .summary-state {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+      .state-circle {
+        --climate: #94a3b8;
+        width: 76px;
+        height: 76px;
+        border-radius: 999px;
+        display: grid;
+        place-items: center;
+        background: var(--climate);
+        box-shadow: 0 10px 20px rgba(15, 23, 42, 0.18);
+      }
+      .state-circle img {
+        width: 44px;
+        height: 44px;
+        display: block;
+      }
+      .state-label {
+        font-weight: 800;
+        letter-spacing: 0.14em;
+        font-size: 14px;
+        color: var(--climate);
+      }
+      .state-breakdown {
+        font-size: 12px;
+        color: #64748b;
+      }
+      .state-meta {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .summary-suggestion {
+        border: 1px solid var(--border);
+        background: #f8fafc;
+        border-radius: 14px;
+        padding: 10px 14px;
+        font-weight: 600;
+        color: #0f172a;
+        width: max-content;
+        justify-self: end;
+        text-align: right;
+        align-self: center;
+      }
+      @keyframes smPulse {
+        0% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.04);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+      .state-circle.pulse {
+        animation: smPulse 0.6s ease;
+      }
+
+      /* Light inputs for the teacher view */
+      .teacher-shell:not(.compact-mode) .pin-row input,
+      .teacher-shell:not(.compact-mode) input[type="text"],
+      .teacher-shell:not(.compact-mode) input[type="number"],
+      .teacher-shell:not(.compact-mode) input[type="search"] {
+        background: #fff;
+        color: #0f172a;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 10px 14px;
+        box-shadow:
+          inset 0 2px 0 rgba(15, 23, 42, 0.03),
+          0 1px 2px rgba(15, 23, 42, 0.06);
+        color-scheme: light;
+      }
+      .teacher-shell:not(.compact-mode) input::placeholder {
+        color: #94a3b8;
+      }
+      .teacher-shell:not(.compact-mode) input:focus {
+        outline: none;
+        border-color: var(--brand);
+        box-shadow: 0 0 0 3px rgba(11, 94, 138, 0.15);
+      }
+      .teacher-shell:not(.compact-mode) input:-webkit-autofill {
+        -webkit-box-shadow: 0 0 0 30px #fff inset !important;
+        -webkit-text-fill-color: #0f172a !important;
+      }
+
+      /* Compact pin */
+      .c-pin input {
+        background: #fff;
+        color: #0f172a;
+        border: 1px solid #cbd5e1;
+        border-radius: 999px;
+      }
+
+      .c-pin-inline {
+        width: 100%;
+        display: flex;
+        gap: 8px;
+        margin-top: 12px;
+      }
+      .c-pin-inline input {
+        flex: 1;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        padding: 8px 10px;
+        background: #fff;
+        color: #0f172a;
+        font-size: 13px;
+      }
+      .c-pin-inline button {
+        border: 1px solid #0f172a;
+        background: #0f172a;
+        color: #fff;
+        border-radius: 10px;
+        padding: 8px 12px;
+        cursor: pointer;
+      }
+
+      /* Force white sensor tiles in the regular teacher view */
+      .teacher-shell:not(.compact-mode) .env-row .env-badge,
+      .teacher-shell:not(.compact-mode) .env-row .env-badge.elevated {
+        background: #ffffff;
+        color: #0f172a;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        box-shadow:
+          0 8px 18px rgba(15, 23, 42, 0.12),
+          0 1px 2px rgba(15, 23, 42, 0.06);
+      }
+      .teacher-shell:not(.compact-mode) .env-row .env-badge .env-icon {
+        color: #475569;
+      }
+      .teacher-shell:not(.compact-mode) .env-row .env-badge .env-value {
+        color: #64748b;
+      }
+      .teacher-shell:not(.compact-mode) .env-row .env-badge::after {
+        background: #e2e8f0;
+      }
+      .teacher-shell:not(.compact-mode) .env-row .env-badge.good::after {
+        background: var(--ok);
+      }
+      .teacher-shell:not(.compact-mode) .env-row .env-badge.warning::after {
+        background: var(--warning);
+      }
+      .teacher-shell:not(.compact-mode) .env-row .env-badge.danger::after {
+        background: var(--danger);
+      }
       .charts {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -20,7 +351,7 @@
       }
       canvas {
         width: 100%;
-        height: 240px;
+        height: 260px;
       }
       .legend {
         display: flex;
@@ -28,7 +359,7 @@
         flex-wrap: wrap;
         margin-top: 10px;
         font-size: 12px;
-        color: var(--muted-foreground);
+        color: #64748b;
       }
       .legend span {
         display: inline-flex;
@@ -41,13 +372,437 @@
         border-radius: 50%;
         display: inline-block;
       }
+      /* ---------- 1280 x 400 COMPACT VIEW ---------- */
+
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+      }
+
+      /* blue background that the card sits on */
+      body.compact-mode {
+        background: #000;
+        color: #0f172a;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      /* Regular teacher view theming */
+      body.teacher-shell:not(.compact-mode) {
+        background: #ffffff;
+        color: #0f172a;
+      }
+
+      body.teacher-shell:not(.compact-mode) .page {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
+      }
+
+      body.teacher-shell:not(.compact-mode) .card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 14px 30px rgba(15, 23, 42, 0.1);
+      }
+
+      body.teacher-shell:not(.compact-mode) .topbar .brand {
+        color: #0b5e8a;
+      }
+
+      body.teacher-shell:not(.compact-mode) button.primary {
+        background: #0b5e8a;
+        color: #fff;
+        border: 1px solid rgba(0, 0, 0, 0.08);
+      }
+
+      body.teacher-shell:not(.compact-mode) button.ghost {
+        border-color: #e5e7eb;
+        color: #0f172a;
+      }
+
+      .logo-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 10px;
+        background: #0b5e8a;
+        border-radius: 10px;
+        color: #fff;
+        font-weight: 600;
+      }
+
+      .logo-chip img {
+        height: 22px;
+        width: auto;
+        display: block;
+        filter: brightness(1.1);
+      }
+
+      /* outer container is exactly 1280 x 400 */
+      #compactView {
+        display: block;
+        width: 1280px;
+        height: 400px;
+        background: transparent;
+      }
+
+      /* inner card (white + blue areas) */
+      #compactView .display {
+        width: 100%;
+        height: 100%;
+        display: grid;
+        grid-template-columns: 340px 1fr 360px;
+        background: #ffffff;
+        border-radius: 24px;
+        overflow: hidden;
+        box-shadow: 0 24px 45px rgba(15, 23, 42, 0.45);
+        position: relative;
+      }
+
+      /* ----- left column: environment ----- */
+
+      .c-env {
+        background: #f8fafc;
+        padding: 24px 40px 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+      }
+
+      .c-env .eyebrow {
+        text-align: left;
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+        font-size: 11px;
+        font-weight: 600;
+        color: #64748b;
+      }
+
+      /* list of rows */
+      .c-env-list {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        flex: 1;
+        justify-content: center;
+      }
+
+      /* each row */
+      .c-env-tile {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 8px 0;
+        border: none;
+        background: transparent;
+      }
+
+      /* left: label & value */
+      .c-env-meta {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .c-env-label {
+        font-weight: 600;
+        font-size: 16px;
+        color: #0f172a;
+      }
+
+      .c-env-value {
+        color: #64748b;
+        font-size: 13px;
+      }
+
+      /* right: three small indicator circles */
+      .c-env-dots {
+        display: flex;
+        gap: 8px;
+        margin-left: auto;
+        align-items: center;
+      }
+
+      .c-env-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .c-env-icon {
+        font-size: 20px;
+        width: 28px;
+        text-align: center;
+        color: #64748b;
+      }
+
+      .c-env-meta {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .c-env-dot {
+        width: 18px;
+        height: 18px;
+        border-radius: 999px;
+        background: #e2e8f0;
+        box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.4);
+      }
+
+      .c-env-dot.is-on {
+        background: #95c11f;
+        box-shadow: 0 0 0 4px rgba(149, 193, 31, 0.25);
+      }
+
+      .c-env-footer {
+        font-size: 12px;
+        color: #94a3b8;
+        text-align: center;
+      }
+
+      /* ----- center column: climate circle ----- */
+
+      .c-center-wrap {
+        background: #ffffff;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        justify-content: flex-start;
+        padding: 24px 0 24px;
+        gap: 8px;
+      }
+
+      .c-center-heading {
+        display: flex;
+        justify-content: center;
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+        font-size: 11px;
+        font-weight: 600;
+        color: #94a3b8;
+      }
+
+      .c-center {
+        --climate-color: #95c11f;
+        --climate-tint: color-mix(in srgb, var(--climate-color) 90%, #fff 10%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        text-align: center;
+        flex: 1;
+        justify-content: center;
+      }
+
+      .c-circle {
+        position: relative;
+        width: 220px;
+        height: 220px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        font-size: 64px;
+        color: #ffffff;
+        background: var(--climate-color);
+        box-shadow: 0 18px 38px rgba(0, 0, 0, 0.25);
+      }
+
+      .c-circle::after {
+        display: none;
+      }
+
+      .state-icon {
+        width: 128px;
+        height: 128px;
+        display: block;
+        margin: 0 auto;
+      }
+      }
+
+      @keyframes pulse {
+        0% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.05);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+
+      .circle-pulse {
+        animation: pulse 0.6s ease;
+      }
+
+      .c-label {
+        letter-spacing: 0.18em;
+        font-weight: 700;
+        font-size: 16px;
+        color: var(--climate-color);
+        transition: color 0.3s ease;
+      }
+
+      .c-center-helper {
+        font-size: 12px;
+        color: color-mix(in srgb, var(--climate-color) 50%, #64748b);
+      }
+
+      @supports not (color: color-mix(in srgb, white 50%, black 50%)) {
+        .c-center-helper {
+          opacity: 0.6;
+        }
+      }
+
+      /* ----- right column: brand + message ----- */
+
+      .c-right {
+        background: linear-gradient(135deg, #0b5e8a, #00456a, #0b5e8a);
+        background-size: 200% 200%;
+        animation: panelShift 14s ease-in-out infinite;
+        color: #ffffff;
+        padding: 28px 36px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        overflow: hidden;
+      }
+
+      .c-brand {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 20px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+      }
+
+      .c-brand img {
+        height: 34px;
+        width: auto;
+      }
+
+      .c-message {
+        font-size: 28px;
+        line-height: 1.25;
+        text-align: left;
+        flex: 1 1 100%;
+        display: flex;
+        align-items: center;
+        padding-left: 8px;
+        justify-content: center;
+        font-weight: 700;
+      }
+
+      /* pin box stays small and flat on top */
+      .c-pin {
+        position: absolute;
+        top: 16px;
+        left: 24px;
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 999px;
+        padding: 4px 8px;
+        border: 1px solid #cbd5e1;
+      }
+
+      .c-pin input {
+        border: none;
+        padding: 4px 8px;
+        outline: none;
+        font-size: 13px;
+        border-radius: 999px;
+      }
+
+      .c-pin button {
+        border: none;
+        background: #0f172a;
+        color: #fff;
+        padding: 6px 10px;
+        font-size: 12px;
+        cursor: pointer;
+        border-radius: 999px;
+      }
+
+      @keyframes bgShift {
+        0% {
+          background-position: 0% 0%, 100% 50%, 0% 50%;
+        }
+        50% {
+          background-position: 40% 30%, 60% 70%, 100% 60%;
+        }
+        100% {
+          background-position: 0% 0%, 100% 50%, 0% 50%;
+        }
+      }
+
+      @keyframes panelShift {
+        0% {
+          background-position: 0% 50%;
+        }
+        50% {
+          background-position: 100% 50%;
+        }
+        100% {
+          background-position: 0% 50%;
+        }
+      }
+
+      /* (optional) if window slightly smaller, scale a bit */
+      @media (max-width: 1260px) {
+        #compactView .display {
+          transform: scale(0.95);
+          transform-origin: center;
+        }
+      }
     </style>
   </head>
-  <body>
-    <div class="page">
-      <header class="topbar">
+  <body class="teacher-shell">
+    <div id="compactView">
+      <div class="c-pin">
+        <input id="cPinInput" type="text" maxlength="5" placeholder="PIN" />
+        <button id="cConnectBtn">Go</button>
+      </div>
+      <div class="display">
+        <div class="c-env">
+          <div class="eyebrow">Environment</div>
+          <div class="c-env-list" id="cEnvList"></div>
+        </div>
+        <div class="c-center-wrap">
+          <div class="c-center-heading">Classroom climate</div>
+          <div class="c-center">
+            <div class="c-circle" id="cCircle"><span id="cEmoji" class="c-icon"></span></div>
+            <div class="c-label" id="cLabel">WAITING</div>
+          </div>
+        </div>
+        <div class="c-right">
+          <div class="c-brand">
+            <div style="font-size:24px;font-weight:700;letter-spacing:0.04em;">ClassSense</div>
+            <img src="st-klemens-logo-white.png" alt="Gymnasium logo" />
+          </div>
+          <div class="c-message" id="cMessage">Waiting for data</div>
+          <div class="c-pin-inline">
+            <input id="cPinInputInline" type="text" maxlength="5" placeholder="PIN" />
+            <button id="cConnectBtnInline">Go</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+      <div id="regularView" class="page">
+        <header class="topbar">
         <div class="brand">Teacher Dashboard</div>
         <div class="actions">
+          <div class="logo-chip">
+            <img src="st-klemens-logo-white.png" alt="Gymnasium logo" />
+          </div>
           <button id="downloadState" class="ghost" disabled>Download class state</button>
           <button id="themeToggle" class="ghost">Dark</button>
         </div>
@@ -62,13 +817,51 @@
       </section>
 
       <section class="card">
-        <h3>Latest sensor snapshot</h3>
+        <div class="section-heading" style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div class="eyebrow">Room snapshot</div>
+            <h3>Latest sensor snapshot</h3>
+          </div>
+          <div class="pill muted" id="sensorPill">Waiting</div>
+        </div>
         <div id="sensors" class="env-row"></div>
         <div class="muted" id="lastSensor">Last sensor: none</div>
       </section>
 
+      <section class="card summary-card" id="summaryCard">
+        <div class="section-heading" style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div class="eyebrow">Classroom climate</div>
+            <h3>Summary</h3>
+          </div>
+          <div class="pill muted" id="summaryPill">Waiting</div>
+        </div>
+
+        <div class="summary-grid">
+          <div class="summary-state">
+            <div class="state-circle" id="summaryCircle">
+              <span id="summaryIcon"></span>
+            </div>
+            <div class="state-meta">
+              <div id="summaryLabel" class="state-label">WAITING</div>
+              <div id="summaryBreakdown" class="state-breakdown">—</div>
+            </div>
+          </div>
+
+          <div class="summary-suggestion" id="summarySuggestion">
+            Waiting for data
+          </div>
+        </div>
+      </section>
+
       <section class="card">
-        <h3>Class signals</h3>
+        <div class="section-heading" style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div class="eyebrow">Classroom climate</div>
+            <h3>Class signals</h3>
+          </div>
+          <div class="pill muted" id="livePill">Waiting</div>
+        </div>
         <div class="charts">
           <div class="chart-card">
             <h4>Per-minute CO₂ & emotions</h4>
@@ -91,11 +884,16 @@
       let theme = prefersDark ? "dark" : "light";
       const setTheme = (th) => document.documentElement.classList.toggle("dark", th === "dark");
       setTheme(theme);
-      document.getElementById("themeToggle").onclick = () => {
-        theme = theme === "dark" ? "light" : "dark";
-        setTheme(theme);
-        document.getElementById("themeToggle").textContent = theme === "dark" ? "Light" : "Dark";
-      };
+      document.addEventListener("DOMContentLoaded", () => {
+        const themeBtn = document.getElementById("themeToggle");
+        if (themeBtn) {
+          themeBtn.onclick = () => {
+            theme = theme === "dark" ? "light" : "dark";
+            setTheme(theme);
+            themeBtn.textContent = theme === "dark" ? "Light" : "Dark";
+          };
+        }
+      });
 
       let pollTimer = null;
       let pin = "";
@@ -106,6 +904,13 @@
       const signalCanvas = document.getElementById("signalChart");
       const ctx = signalCanvas.getContext("2d");
       const downloadBtn = document.getElementById("downloadState");
+      const compactView = document.getElementById("compactView");
+      const regularView = document.getElementById("regularView");
+      const cPinInput = document.getElementById("cPinInput");
+      const cConnectBtn = document.getElementById("cConnectBtn");
+      const cPinInputInline = document.getElementById("cPinInputInline");
+      const cConnectBtnInline = document.getElementById("cConnectBtnInline");
+      const pinInput = document.getElementById("pinInput");
 
       // Simple in-memory histories (per minute) for charting
       const co2History = new Map(); // minuteKey -> ppm
@@ -118,10 +923,24 @@
         tired: "#facc15",
       };
 
+      function applyMode() {
+        const useCompact = window.innerWidth <= 1300 && window.innerHeight <= 420;
+        document.body.classList.toggle("compact-mode", useCompact);
+        if (compactView) compactView.style.display = useCompact ? "block" : "none";
+        if (regularView) regularView.style.display = useCompact ? "none" : "block";
+      }
+
       const minuteKey = (ts) => {
         const t = new Date(ts);
         return `${t.getHours().toString().padStart(2, "0")}:${t.getMinutes().toString().padStart(2, "0")}`;
       };
+
+      function setPin(newPin) {
+        pin = newPin;
+        if (pinInput) pinInput.value = newPin;
+        if (cPinInput) cPinInput.value = newPin;
+        if (cPinInputInline) cPinInputInline.value = newPin;
+      }
 
       function pruneHistory(map, keep = 120) {
         const keys = Array.from(map.keys()).sort();
@@ -138,18 +957,47 @@
 
       function renderSensors(sensor) {
         const s = sensor?.sensors || {};
-        const items = [
-          { label: "°C", value: s.temperature_c != null ? `${Math.round(s.temperature_c)}°C` : "n/a" },
-          { label: "CO₂", value: s.eco2_ppm != null ? `${Math.round(s.eco2_ppm)} ppm` : "n/a" },
-          { label: "🔊", value: s.noise_db != null ? `${Math.round(s.noise_db)} dB` : "n/a" },
-          { label: "Lux", value: s.brightness_lux != null ? `${Math.round(s.brightness_lux)} lx` : "n/a" },
+        const statusFor = (type, val) => {
+          if (val == null) return "warning";
+          if (type === "co2") return val <= 800 ? "good" : val <= 1200 ? "warning" : "danger";
+          if (type === "temperature") return val >= 20 && val <= 24 ? "good" : val >= 18 && val <= 27 ? "warning" : "danger";
+          if (type === "noise") return val <= 50 ? "good" : val <= 65 ? "warning" : "danger";
+          return "good";
+        };
+
+        const rows = [
+          {
+            label: "°C",
+            value: s.temperature_c != null ? `${Math.round(s.temperature_c)}°C` : "n/a",
+            status: statusFor("temperature", s.temperature_c),
+          },
+          {
+            label: "CO₂",
+            value: s.eco2_ppm != null ? `${Math.round(s.eco2_ppm)} ppm` : "n/a",
+            status: statusFor("co2", s.eco2_ppm),
+          },
+          {
+            label: "🔊",
+            value: s.noise_db != null ? `${Math.round(s.noise_db)} dB` : "n/a",
+            status: statusFor("noise", s.noise_db),
+          },
+          {
+            label: "Lux",
+            value: s.brightness_lux != null ? `${Math.round(s.brightness_lux)} lx` : "n/a",
+            status: "good",
+          },
         ];
-        sensorsEl.innerHTML = items.map((i) => `
-          <div class="env-badge">
-            <div class="env-icon">${i.label}</div>
-            <div class="env-value">${i.value}</div>
+
+        sensorsEl.innerHTML = rows
+          .map(
+            (r) => `
+          <div class="env-badge ${r.status}">
+            <div class="env-icon">${r.label}</div>
+            <div class="env-value">${r.value}</div>
           </div>
-        `).join("");
+        `
+          )
+          .join("");
         lastSensorEl.textContent = `Last sensor: ${sensor?.timestamp || "none"}`;
 
         // Track CO₂ history for the chart (bucketed per minute)
@@ -192,7 +1040,7 @@
         ctx.clearRect(0, 0, signalCanvas.width, signalCanvas.height);
 
         if (!labels.length) {
-          ctx.fillStyle = "var(--muted-foreground)";
+          ctx.fillStyle = "#64748b";
           ctx.font = "14px sans-serif";
           ctx.fillText("No data yet. Connect to start polling.", 12, 24);
           return;
@@ -240,7 +1088,7 @@
           topPad + plotH - ((v - minCo2) / Math.max(maxCo2 - minCo2 || 1, 1)) * plotH;
 
         // --- grid lines ---
-        ctx.strokeStyle = "rgba(255,255,255,0.06)";
+        ctx.strokeStyle = "rgba(15,23,42,0.06)";
         ctx.lineWidth = 1;
         ctx.beginPath();
         [0, 0.5, 1].forEach((p) => {
@@ -262,7 +1110,6 @@
           labels.forEach((l, idx) => {
             const bucket = emotionBuckets.get(l);
             const v = bucket ? bucket.counts.get(key) || 0 : 0;
-            // if you want gaps where there’s no data, skip v === 0
             const x = xFor(idx);
             const y = yEmotion(v);
 
@@ -347,7 +1194,7 @@
         }
 
         // -------- axes labels / x-ticks --------
-        ctx.fillStyle = "var(--muted-foreground)";
+        ctx.fillStyle = "#64748b";
         ctx.font = "11px sans-serif";
 
         labels.forEach((l, idx) => {
@@ -371,12 +1218,286 @@
           renderSensors(data.last_sensor);
           aggregateEmotions(data.emotions || []);
           renderChart();
+          renderSummary(data);
           setStatus(`Connected to ${pin}, entries: ${data.emotions?.length || 0}`);
+          const sensorPill = document.getElementById("sensorPill");
+          if (sensorPill) sensorPill.textContent = "Live";
+          const livePill = document.getElementById("livePill");
+          if (livePill) livePill.textContent = "Live";
           if (downloadBtn) downloadBtn.disabled = false;
+          renderCompact(data);
         } catch (e) {
           setStatus("Failed to fetch state.", true);
           if (downloadBtn) downloadBtn.disabled = true;
         }
+      }
+
+      function envStatus(type, val) {
+        if (val == null) return "warning";
+        if (type === "co2") {
+          if (val <= 800) return "good";
+          if (val <= 1200) return "warning";
+          return "danger";
+        }
+        if (type === "temperature") {
+          if (val >= 20 && val <= 24) return "good";
+          if (val >= 18 && val <= 27) return "warning";
+          return "danger";
+        }
+        if (type === "noise") {
+          if (val <= 50) return "good";
+          if (val <= 65) return "warning";
+          return "danger";
+        }
+        return "warning";
+      }
+
+      // Get a timestamp (ms) for an emotion item, robust to field name differences
+      function eventTimeMs(e) {
+        const t = e?.received_at || e?.timestamp || e?.created_at;
+        const ms = t ? new Date(t).getTime() : NaN;
+        return Number.isFinite(ms) ? ms : 0;
+      }
+
+      // Keep only emotions within the last `windowMs` (default 60s)
+      function filterRecent(emotions = [], windowMs = 60_000) {
+        const cutoff = Date.now() - windowMs;
+        return emotions.filter((e) => eventTimeMs(e) >= cutoff);
+      }
+
+      function computeBreakdown(emotions = [], windowMs = 60_000) {
+        const recent = filterRecent(emotions, windowMs);
+        const counts = { ok: 0, lost: 0, overloaded: 0, tired: 0 };
+
+        recent.forEach((e) => {
+          const p = e.payload || {};
+          if (p.pace) {
+            if (p.pace === "ok") counts.ok += 1;
+            if (p.pace === "too-fast") counts.lost += 1;
+            if (p.pace === "overloaded") counts.overloaded += 1;
+            if (p.pace === "tired") counts.tired += 1;
+          } else if (typeof p.focus === "number") {
+            const f = Number(p.focus);
+            if (f < 25) counts.lost += 1;
+            else if (f < 50) counts.overloaded += 1;
+            else counts.ok += 1;
+          }
+        });
+
+        const total = counts.ok + counts.lost + counts.overloaded + counts.tired;
+        const pct = total
+          ? {
+              ok: Math.round((counts.ok / total) * 100),
+              lost: Math.round((counts.lost / total) * 100),
+              overloaded: Math.round((counts.overloaded / total) * 100),
+              tired: Math.round((counts.tired / total) * 100),
+            }
+          : { ok: 0, lost: 0, overloaded: 0, tired: 0 };
+
+        const dominant =
+          total === 0
+            ? "idle"
+            : ["ok", "lost", "overloaded", "tired"].reduce((a, b) => (counts[b] > counts[a] ? b : a), "ok");
+
+        return { counts, pct, dominant, total, windowMs, recentCount: total };
+      }
+
+      function renderSummary(data) {
+        const envVals = {
+          co2: data?.last_sensor?.sensors?.eco2_ppm ?? null,
+          temperature: data?.last_sensor?.sensors?.temperature_c ?? null,
+          noise: data?.last_sensor?.sensors?.noise_db ?? null,
+        };
+        const envStatuses = {
+          co2: envStatus("co2", envVals.co2),
+          temperature: envStatus("temperature", envVals.temperature),
+          noise: envStatus("noise", envVals.noise),
+        };
+
+        const breakdown = computeBreakdown(data?.emotions || []);
+        const dominant = breakdown.dominant;
+
+        const color =
+          {
+            ok: "#95c11f",
+            lost: "#ef4444",
+            overloaded: "#facc15",
+            tired: "#f59e0b",
+            idle: "#94a3b8",
+          }[dominant] || "#94a3b8";
+
+        const iconHtml =
+          {
+            ok: `<img src="src/state-ok.svg" alt="Engaged" />`,
+            lost: `<img src="src/state-lost.svg" alt="Lost" />`,
+            overloaded: `<img src="src/state-overloaded.svg" alt="Overloaded" />`,
+            tired: `<img src="src/state-tired.svg" alt="Tired" />`,
+            idle: `<img src="src/state-ok.svg" alt="Idle" />`,
+          }[dominant] || `<img src="src/state-ok.svg" alt="State" />`;
+
+        const label =
+          {
+            ok: "ENGAGED",
+            lost: "LOST",
+            overloaded: "OVERLOAD",
+            tired: "TIRED",
+            idle: "WAITING",
+          }[dominant] || "MONITOR";
+
+        const message = (() => {
+          if (envStatuses.co2 === "danger") return "Open the window";
+          if (breakdown.total === 0) return "Waiting for feedback";
+          switch (dominant) {
+            case "ok":
+              return "Class is engaged";
+            case "overloaded":
+              return "Slow down & review";
+            case "tired":
+              return "Time for a break";
+            case "lost":
+              return "Pause & clarify";
+            default:
+              return "Monitor class";
+          }
+        })();
+
+        const pill = document.getElementById("summaryPill");
+        const circle = document.getElementById("summaryCircle");
+        const icon = document.getElementById("summaryIcon");
+        const labelEl = document.getElementById("summaryLabel");
+        const brk = document.getElementById("summaryBreakdown");
+        const sug = document.getElementById("summarySuggestion");
+
+        if (pill) pill.textContent = "Live";
+        if (circle) {
+          circle.style.setProperty("--climate", color);
+          circle.classList.remove("pulse");
+          void circle.offsetWidth;
+          circle.classList.add("pulse");
+        }
+        if (icon) icon.innerHTML = iconHtml;
+        if (labelEl) {
+          labelEl.textContent = label;
+          labelEl.style.color = color;
+        }
+        if (brk) {
+          const span = Math.round(breakdown.windowMs / 1000);
+          brk.textContent =
+            breakdown.total === 0
+              ? `No recent feedback (last ${span}s)`
+              : `OK ${breakdown.pct.ok}% · Lost ${breakdown.pct.lost}% · Overload ${breakdown.pct.overloaded}% · Tired ${breakdown.pct.tired}% (last ${span}s)`;
+        }
+        if (sug) sug.textContent = message;
+      }
+
+      function renderCompact(data) {
+        const envVals = {
+          co2: data?.last_sensor?.sensors?.eco2_ppm ?? null,
+          temperature: data?.last_sensor?.sensors?.temperature_c ?? null,
+          noise: data?.last_sensor?.sensors?.noise_db ?? null,
+        };
+        const envStatuses = {
+          co2: envStatus("co2", envVals.co2),
+          temperature: envStatus("temperature", envVals.temperature),
+          noise: envStatus("noise", envVals.noise),
+        };
+        const envList = [
+          { key: "co2", label: "Air", unit: "ppm" },
+          { key: "temperature", label: "Temp", unit: "°C" },
+          { key: "noise", label: "Noise", unit: "dB" },
+        ]
+          .map((row) => {
+            const val = envVals[row.key];
+            const st = envStatuses[row.key];
+            const onClass = st === "good" || st === "warning" ? "is-on" : "";
+            const icon = row.key === "co2" ? "🌬️" : row.key === "temperature" ? "🌡️" : "🔊";
+            return `
+              <div class="c-env-tile">
+                <div class="c-env-row">
+                  <div class="c-env-icon">${icon}</div>
+                  <div class="c-env-meta">
+                    <div class="c-env-label">${row.label}</div>
+                    <div class="c-env-value">${val != null ? `${Math.round(val)} ${row.unit}` : "n/a"}</div>
+                  </div>
+                  <div class="c-env-dots">
+                    <span class="c-env-dot ${onClass}"></span>
+                    <span class="c-env-dot"></span>
+                    <span class="c-env-dot"></span>
+                  </div>
+                </div>
+              </div>
+            `;
+          })
+          .join("");
+        const cEnvList = document.getElementById("cEnvList");
+        if (cEnvList) cEnvList.innerHTML = envList + '<div class="c-env-footer">Tap for values</div>';
+
+        const breakdown = computeBreakdown(data?.emotions || []);
+        const dominantColor =
+          {
+            ok: "#95c11f",
+            lost: "#ef4444",
+            overloaded: "#facc15",
+            tired: "#f59e0b",
+            idle: "#94a3b8",
+          }[breakdown.dominant] || "#94a3b8";
+        const iconSvg = (() => {
+          switch (breakdown.dominant) {
+            case "ok":
+              return `<img src="src/state-ok.svg" alt="Engaged" class="state-icon" />`;
+            case "lost":
+              return `<img src="src/state-lost.svg" alt="Lost" class="state-icon" />`;
+            case "overloaded":
+              return `<img src="src/state-overloaded.svg" alt="Overloaded" class="state-icon" />`;
+            case "tired":
+              return `<img src="src/state-tired.svg" alt="Tired" class="state-icon" />`;
+            default:
+              return `<img src="src/state-ok.svg" alt="Engaged" class="state-icon" />`;
+          }
+        })();
+        const label =
+          {
+            ok: "ENGAGED",
+            lost: "LOST",
+            overloaded: "OVERLOAD",
+            tired: "TIRED",
+            idle: "WAITING",
+          }[breakdown.dominant] || "MONITOR";
+
+        const message = (() => {
+          if (envStatuses.co2 === "danger") return "Open the window";
+          if (breakdown.total === 0) return "Waiting for feedback";
+          switch (breakdown.dominant) {
+            case "ok":
+              return "Class is engaged";
+            case "overloaded":
+              return "Slow down & review";
+            case "tired":
+              return "Time for a break";
+            case "lost":
+              return "Pause & clarify";
+            default:
+              return "Monitor class";
+          }
+        })();
+
+        const center = document.querySelector(".c-center");
+        const circle = document.getElementById("cCircle");
+        const emojiEl = document.getElementById("cEmoji");
+        const labelEl = document.getElementById("cLabel");
+        const msgEl = document.getElementById("cMessage");
+        if (center) center.style.setProperty("--climate-color", dominantColor);
+        if (circle) {
+          circle.classList.remove("circle-pulse");
+          void circle.offsetWidth;
+          circle.classList.add("circle-pulse");
+        }
+        if (emojiEl) emojiEl.innerHTML = iconSvg;
+        if (labelEl) {
+          labelEl.textContent = label;
+          labelEl.style.fontSize = "20px";
+        }
+        if (msgEl) msgEl.textContent = message;
       }
 
       async function downloadClassState() {
@@ -402,16 +1523,54 @@
       }
 
       document.getElementById("connectBtn").onclick = () => {
-        pin = document.getElementById("pinInput").value.trim();
-        if (!pin) {
+        const entered = (document.getElementById("pinInput").value || "").trim();
+        if (!entered) {
           setStatus("Please enter a PIN.", true);
           return;
         }
+        setPin(entered);
+        localStorage.setItem("class_pin", entered);
         fetchState();
         clearInterval(pollTimer);
         pollTimer = setInterval(fetchState, 5000);
       };
+      if (cConnectBtn) {
+        cConnectBtn.onclick = () => {
+          const entered = (cPinInput?.value || "").trim();
+          if (!entered) {
+            setStatus("Please enter a PIN.", true);
+            return;
+          }
+          setPin(entered);
+          localStorage.setItem("class_pin", entered);
+          fetchState();
+          clearInterval(pollTimer);
+          pollTimer = setInterval(fetchState, 5000);
+        };
+      }
+      if (cConnectBtnInline) {
+        cConnectBtnInline.onclick = () => {
+          const entered = (cPinInputInline?.value || "").trim();
+          if (!entered) {
+            setStatus("Please enter a PIN.", true);
+            return;
+          }
+          setPin(entered);
+          localStorage.setItem("class_pin", entered);
+          fetchState();
+          clearInterval(pollTimer);
+          pollTimer = setInterval(fetchState, 5000);
+        };
+      }
       if (downloadBtn) downloadBtn.onclick = downloadClassState;
+      const savedPin = localStorage.getItem("class_pin");
+      if (savedPin) {
+        setPin(savedPin);
+        fetchState();
+        pollTimer = setInterval(fetchState, 5000);
+      }
+      applyMode();
+      window.addEventListener("resize", applyMode);
     </script>
   </body>
 </html>

@@ -107,6 +107,7 @@ function serveStatic(req, res, pathname) {
   if (pathname === "/buttons" || pathname === "/buttons/") mapped = "/buttons.html";
   if (pathname === "/api-suite" || pathname === "/api-suite/") mapped = "/api-suite.html";
   if (pathname === "/teacher" || pathname === "/teacher/") mapped = "/teacher.html";
+  if (pathname === "/teacher-display" || pathname === "/teacher-display/") mapped = "/teacher-display.html";
 
   const safePath = path.normalize(path.join(STATIC_ROOT, mapped.replace(/^\//, "")));
   if (!safePath.startsWith(STATIC_ROOT)) {
