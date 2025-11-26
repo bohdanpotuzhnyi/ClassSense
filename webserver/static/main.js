@@ -190,8 +190,8 @@
   };
 
   const formLinks = {
-    buttons: "#buttons-form",
-    slider: "#slider-form",
+    buttons: "https://forms.office.com/e/Ww2xeZGa6s",
+    slider: "https://forms.office.com/e/CAq6qExFeb",
   };
 
   const state = {

@@ -1,0 +1,14 @@
+Button vs Slider input time tests
+button_n=516, slider_n=89
+button_mean_ms=1271.541, slider_mean_ms=3235.955
+
+Welch t-test (H1: button < slider)
+t_stat=-2.424370, df=112.08, p_value=0.00766749 (normal approximation)
+
+Mann-Whitney U (two-sided)
+u1=11576.0, u2=34348.0, z=-7.476626, p_value=7.62723e-14
+
+Effect sizes
+mean_diff_ms (button-slider)=-1964.414
+Cohen_d=-0.307
+bootstrap_mean_diff_95pct_CI=[-3667.635, -486.845]

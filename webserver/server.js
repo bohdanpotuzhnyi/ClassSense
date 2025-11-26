@@ -30,6 +30,10 @@ const store = {
   classes: {},
 };
 
+const EMOTION_LIMIT = Number.isFinite(Number(process.env.EMOTION_LIMIT))
+  ? Number(process.env.EMOTION_LIMIT)
+  : 10000;
+
 const utcNow = () => new Date().toISOString();
 
 function generatePin() {
@@ -65,7 +69,7 @@ function addEmotion(pin, payload) {
   const cls = store.classes[pin];
   if (!cls) throw new Error("class_not_found");
   cls.emotions.push({ received_at: utcNow(), payload });
-  cls.emotions = cls.emotions.slice(-200);
+  cls.emotions = cls.emotions.slice(-EMOTION_LIMIT);
 }
 
 function getState(pin) {
