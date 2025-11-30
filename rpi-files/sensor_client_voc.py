@@ -89,7 +89,7 @@ signal.signal(signal.SIGTERM, _handle_sig)
 # Tuning factor for compensation. Decrease this number to adjust the
 # temperature down, and increase to adjust up.
 # For hotter CPUs (Pi 4 / Pi 5) this value should be higher than on a Pi Zero.
-CPU_TEMP_FACTOR = 5.0
+CPU_TEMP_FACTOR = 1.25
 _cpu_temps = []
 
 # Single offset for calibration to more realistic noise levels.
