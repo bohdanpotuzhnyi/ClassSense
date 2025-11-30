@@ -8,7 +8,7 @@ ClassSense
     * temperature (BME280)
     * eCO2 (SGP30)
     * VOC (SGP30)
-    * noise level (Enviro+ microphone, rough dB)
+    * noise level (Enviro+ microphone)
 - Sends JSON to a web server at a fixed interval.
 """
 
@@ -49,18 +49,21 @@ except Exception:
     ImageDraw = None
     ImageFont = None
 
-# Optional audio capture for noise level
+# Optional audio capture / noise helper
 try:
     import numpy as np
-    import sounddevice as sd
 except Exception:
-    sd = None
     np = None
+
+try:
+    from enviroplus.noise import Noise
+except Exception:
+    Noise = None
 
 import requests
 
 APP_NAME = "ClassSense"
-VERSION = "1.3.0"
+VERSION = "1.4.0"
 
 # Logging
 log = logging.getLogger(APP_NAME)
@@ -80,11 +83,37 @@ def _handle_sig(signum, frame):
 signal.signal(signal.SIGINT, _handle_sig)
 signal.signal(signal.SIGTERM, _handle_sig)
 
+# Tuning factor for compensation. Decrease this number to adjust the
+# temperature down, and increase to adjust up.
+# For hotter CPUs (Pi 4 / Pi 5) this value should be higher than on a Pi Zero.
+CPU_TEMP_FACTOR = 5.0
+_cpu_temps = []
+
+# Single offset for calibration to more realistic noise levels.
+# Lower this if values are still too high, raise if they are too low.
+MIC_DB_OFFSET = 55.0
+
+
 # Config
 def load_config(path="config.ini"):
     cfg = ConfigParser()
     if not cfg.read(path):
         raise FileNotFoundError(f"Config file not found: {path}")
+
+    # Optional override of CPU temp factor from config
+    global CPU_TEMP_FACTOR
+    try:
+        CPU_TEMP_FACTOR = cfg.getfloat("sampling", "temp_cpu_factor", fallback=CPU_TEMP_FACTOR)
+    except Exception:
+        pass
+
+    # Optional override of MIC dB offset from config
+    global MIC_DB_OFFSET
+    try:
+        MIC_DB_OFFSET = cfg.getfloat("sampling", "mic_db_offset", fallback=MIC_DB_OFFSET)
+    except Exception:
+        pass
+
     return cfg
 
 
@@ -109,12 +138,6 @@ def get_cpu_temperature():
         temp = f.read()
         temp = int(temp) / 1000.0
     return temp
-
-
-# Tuning factor for compensation. Decrease this number to adjust the
-# temperature down, and increase to adjust up.
-CPU_TEMP_FACTOR = 4.0
-_cpu_temps = []
 
 
 def get_compensated_temperature(bme):
@@ -168,7 +191,7 @@ def init_sgp30_pimoroni():
     return sgp30
 
 
-def read_sgp30_eco2_pimoroni(sensor):
+def read_sgp30_pimoroni(sensor):
     """
     Read eCO2 (ppm) and VOC (ppb) from SGP30.
 
@@ -203,7 +226,7 @@ def read_sgp30_eco2_pimoroni(sensor):
 # LCD
 class LCD:
     """
-    Simple LCD wrapper that shows sensor values:
+    Simple LCD wrapper that shows sensor values.
     """
 
     def __init__(self, rotation=90, backlight=12):
@@ -222,6 +245,7 @@ class LCD:
         self.WIDTH = self.disp.width
         self.HEIGHT = self.disp.height
         try:
+            # slightly smaller font so we can fit 5 lines
             self.font = ImageFont.truetype(
                 "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 14
             )
@@ -244,14 +268,14 @@ class LCD:
         else:
             noise_str = f"{noise_db:5.1f}"
 
-        # bri, CO2, VOC, tmp, dB – short labels + short units
+        # bri, CO2, VOC, tmp, dB – short labels + compact units
         draw.text((2, y), f"bri {lux_str} lx", font=self.font, fill=(200, 200, 200))
         y += line_gap
-        draw.text((2, y), f"CO2 {eco2_str}ppm", font=self.font, fill=(200, 200, 200))
+        draw.text((2, y), f"CO2 {eco2_str} ppm", font=self.font, fill=(200, 200, 200))
         y += line_gap
-        draw.text((2, y), f"VOC {voc_str}ppb", font=self.font, fill=(200, 200, 200))
+        draw.text((2, y), f"VOC {voc_str} ppb", font=self.font, fill=(200, 200, 200))
         y += line_gap
-        draw.text((2, y), f"tmp {temp_str}°C", font=self.font, fill=(200, 200, 200))
+        draw.text((2, y), f"tmp {temp_str} °C", font=self.font, fill=(200, 200, 200))
         y += line_gap
         draw.text((2, y), f"dB  {noise_str}", font=self.font, fill=(200, 200, 200))
 
@@ -259,31 +283,37 @@ class LCD:
 
 
 # Noise measurement
-# Single offset for calibration to more realistic levels
-MIC_DB_OFFSET = 70.0  # lower this if values are still too high, raise if too low
-
-
-def measure_noise(duration=0.4, samplerate=16000):
+def init_noise():
     """
-    Rough sound level estimate (pseudo dB). Not calibrated.
+    Initialise Noise helper from enviroplus.noise.
     """
-    if sd is None or np is None:
+    if Noise is None:
+        log.warning("enviroplus.noise not available; noise will be n/a.")
         return None
     try:
-        audio = sd.rec(
-            int(duration * samplerate),
-            samplerate=samplerate,
-            channels=1,
-            dtype="float32",
-            blocking=True,
-        )
-        sd.wait()
-        x = audio.flatten()
-        x = x - np.mean(x)
-        rms = np.sqrt(np.mean(np.square(x)) + 1e-12)
-        dbfs = 20.0 * math.log10(rms + 1e-12)  # ref=1.0
-        pseudo_db = dbfs + MIC_DB_OFFSET  # heuristic offset
-        return max(0.0, float(pseudo_db))
+        # Defaults: sample_rate=16000, duration=0.5
+        return Noise()
+    except Exception as e:
+        log.warning(f"Noise init failed: {e}")
+        return None
+
+
+def measure_noise(noise_obj):
+    """
+    Rough sound level estimate (pseudo dB). Not calibrated.
+
+    Uses enviroplus.noise.Noise.get_noise_profile() to obtain
+    low/mid/high band amplitudes and converts the combined
+    amplitude into a dB-like value.
+    """
+    if noise_obj is None:
+        return None
+    try:
+        # get_noise_profile() returns (low, mid, high, total)
+        amp_low, amp_mid, amp_high, amp_total = noise_obj.get_noise_profile()
+        amp = max(amp_total, 1e-12)
+        db = 20.0 * math.log10(amp) + MIC_DB_OFFSET
+        return float(db)
     except Exception as e:
         log.debug(f"Noise measurement failed: {e}")
         return None
@@ -300,10 +330,11 @@ def post_json(url, api_key, payload, timeout=5, extra_headers=None):
     r.raise_for_status()
     return r
 
+
 # TODO: check - keep this helper commented until class code creation is required.
 def create_class(api_base, api_key, metadata=None, timeout=5):
     metadata = metadata or {}
-    api_base = api_base.rstrip("/") 
+    api_base = api_base.rstrip("/")
     url = f"{api_base}/api/classes"
     headers = {"Content-Type": "application/json"}
     if api_key:
@@ -377,6 +408,12 @@ def main():
         log.error(f"LCD init failed: {e}")
         lcd = None
 
+    try:
+        noise = init_noise()
+    except Exception as e:
+        log.error(f"Noise init failed: {e}")
+        noise = None
+
     global shutdown_flag
     sample_idx = 0
 
@@ -405,12 +442,12 @@ def main():
 
         # SGP30
         if sgp:
-            eco2_ppm, voc_ppb = read_sgp30_eco2_pimoroni(sgp)
+            eco2_ppm, voc_ppb = read_sgp30_pimoroni(sgp)
         else:
             eco2_ppm, voc_ppb = float("nan"), float("nan")
 
         # Noise
-        noise_db = measure_noise()
+        noise_db = measure_noise(noise)
 
         # LCD update
         try:
