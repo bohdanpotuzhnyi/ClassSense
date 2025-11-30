@@ -385,15 +385,21 @@ def main():
     # TODO: check - Newer API layout (api_base + class_pin)
     if api_base and not post_url:
         post_url = f"{api_base}/ingest"
-    if api_base and auto_create_class and not class_pin:
+
+    # clear old PIN in memory and in the config file
+    if api_base and auto_create_class:
+        class_pin = ""
+        save_class_pin_to_config(CONFIG_PATH, "")
+
         try:
             metadata = {"device_id": device_id}
             class_pin = create_class(api_base, api_key, metadata=metadata)
             log.info(f"Created class {class_pin} via /api/classes.")
-            # Write the new PIN back into config.ini so others can read it.
+            # Write the new PIN back into config.ini
             save_class_pin_to_config(CONFIG_PATH, class_pin)
         except Exception as e:
             log.error(f"Auto class creation failed: {e}")
+
     ingest_headers = {}
     if class_pin:
         ingest_headers["X-Class-Pin"] = class_pin
