@@ -23,6 +23,9 @@ import logging
 from datetime import datetime, timezone
 from configparser import ConfigParser
 
+# Path to the config file
+CONFIG_PATH = os.path.join(os.path.dirname(__file__), "config.ini")
+
 # Sensor libaries
 try:
     from ltr559 import LTR559
@@ -95,7 +98,7 @@ MIC_DB_OFFSET = 55.0
 
 
 # Config
-def load_config(path="config.ini"):
+def load_config(path=CONFIG_PATH):
     cfg = ConfigParser()
     if not cfg.read(path):
         raise FileNotFoundError(f"Config file not found: {path}")
@@ -107,7 +110,6 @@ def load_config(path="config.ini"):
     except Exception:
         pass
 
-    # Optional override of MIC dB offset from config
     global MIC_DB_OFFSET
     try:
         MIC_DB_OFFSET = cfg.getfloat("sampling", "mic_db_offset", fallback=MIC_DB_OFFSET)
@@ -346,6 +348,23 @@ def create_class(api_base, api_key, metadata=None, timeout=5):
         raise RuntimeError("create_class: unexpected response")
     return str(data["pin"])
 
+def save_class_pin_to_config(path, class_pin):
+    """
+    Write the class PIN back into the [server] section of config.ini.
+    """
+    try:
+        cfg = ConfigParser()
+        if not cfg.read(path):
+            log.warning(f"save_class_pin_to_config: could not read {path}")
+            return
+        if not cfg.has_section("server"):
+            cfg.add_section("server")
+        cfg.set("server", "class_pin", str(class_pin))
+        with open(path, "w") as f:
+            cfg.write(f)
+        log.info(f"Saved class_pin {class_pin} to {path}")
+    except Exception as e:
+        log.warning(f"Could not save class_pin to config: {e}")
 
 # Main loop
 def main():
@@ -367,12 +386,14 @@ def main():
     if api_base and not post_url:
         post_url = f"{api_base}/ingest"
     if api_base and auto_create_class and not class_pin:
-        try:
-            metadata = {"device_id": device_id}
-            class_pin = create_class(api_base, api_key, metadata=metadata)
-            log.info(f"Created class {class_pin} via /api/classes.")
-        except Exception as e:
-            log.error(f"Auto class creation failed: {e}")
+    try:
+        metadata = {"device_id": device_id}
+        class_pin = create_class(api_base, api_key, metadata=metadata)
+        log.info(f"Created class {class_pin} via /api/classes.")
+        # Write the new PIN back into config.ini so others can read it.
+        save_class_pin_to_config(CONFIG_PATH, class_pin)
+    except Exception as e:
+        log.error(f"Auto class creation failed: {e}")
     ingest_headers = {}
     if class_pin:
         ingest_headers["X-Class-Pin"] = class_pin
