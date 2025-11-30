@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+
+CONFIG="/home/thrombus77/files/config.ini"
+
+PIN=""
+if [ -f "$CONFIG" ]; then
+  # Read class_pin from [server] section of config.ini
+  PIN=$(awk -F '=' '
+    BEGIN { in_server=0 }
+    /^\[server\]/ { in_server=1; next }
+    /^\[/ { in_server=0 }
+    in_server && $1 ~ /class_pin/ {
+      gsub(/[ \t]/, "", $2);
+      print $2;
+      exit
+    }' "$CONFIG")
+fi
+
+BASE_URL="https://classsense.potuzhnyi.com/teacher"
+
+if [ -n "$PIN" ]; then
+  URL="${BASE_URL}?pin=${PIN}"
+else:
+  URL="${BASE_URL}"
+fi
+
+exec chromium-browser \
+  --kiosk "$URL" \
+  --incognito \
+  --noerrdialogs \
+  --disable-infobars \
+  --disable-session-crashed-bubble \
+  --start-maximized \
+  --password-store=basic \
+  --disable-features=UsePasswordManager
