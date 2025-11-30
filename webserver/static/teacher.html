@@ -731,6 +731,140 @@
         border-radius: 999px;
       }
 
+      .pin-badge {
+        display: none;
+        align-items: center;
+        justify-content: center;
+        min-width: 160px;
+        padding: 10px 14px;
+        background: rgba(255, 255, 255, 0.14);
+        border: 1px solid rgba(255, 255, 255, 0.28);
+        border-radius: 14px;
+        font-size: 24px;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        color: #fff;
+        text-align: center;
+        cursor: pointer;
+      }
+
+      .breakdown-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(6, 12, 24, 0.8);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 999;
+        padding: 18px;
+        backdrop-filter: blur(4px);
+      }
+      .breakdown-overlay.show {
+        display: flex;
+      }
+      .breakdown-card {
+        background: #0b172b;
+        color: #e2e8f0;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 18px;
+        padding: 18px;
+        width: min(700px, 96vw);
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+      }
+      .breakdown-header {
+        text-align: center;
+        margin-bottom: 12px;
+      }
+      .breakdown-header .title {
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+        font-size: 12px;
+        color: #a5b4fc;
+      }
+      .breakdown-header .subtitle {
+        font-size: 18px;
+        font-weight: 700;
+        margin-top: 6px;
+      }
+      .breakdown-bars {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin: 10px 0;
+      }
+      .breakdown-row {
+        display: grid;
+        grid-template-columns: 1fr 2fr 60px;
+        align-items: center;
+        gap: 10px;
+      }
+      .breakdown-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 600;
+      }
+      .bd-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 999px;
+        display: inline-block;
+      }
+      .bd-ok {
+        background: #95c11f;
+        box-shadow: 0 0 0 4px rgba(149, 193, 31, 0.25);
+      }
+      .bd-overloaded {
+        background: #facc15;
+        box-shadow: 0 0 0 4px rgba(250, 204, 21, 0.25);
+      }
+      .bd-tired {
+        background: #0ea5e9;
+        box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.25);
+      }
+      .bd-lost {
+        background: #ef4444;
+        box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.25);
+      }
+      .breakdown-track {
+        position: relative;
+        width: 100%;
+        height: 12px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.08);
+        overflow: hidden;
+      }
+      .breakdown-fill {
+        position: absolute;
+        inset: 0;
+        width: 0%;
+        border-radius: 999px;
+        transition: width 0.3s ease;
+      }
+      .fill-ok {
+        background: linear-gradient(90deg, #7bb314, #95c11f);
+      }
+      .fill-overloaded {
+        background: linear-gradient(90deg, #fcd34d, #facc15);
+      }
+      .fill-tired {
+        background: linear-gradient(90deg, #22c55e, #0ea5e9);
+      }
+      .fill-lost {
+        background: linear-gradient(90deg, #f97316, #ef4444);
+      }
+      .breakdown-val {
+        text-align: right;
+        font-weight: 700;
+      }
+      .breakdown-footer {
+        text-align: center;
+        color: #cbd5e1;
+        font-size: 13px;
+        margin-top: 12px;
+        letter-spacing: 0.08em;
+      }
+
       @keyframes bgShift {
         0% {
           background-position: 0% 0%, 100% 50%, 0% 50%;
@@ -762,6 +896,17 @@
           transform-origin: center;
         }
       }
+
+      /* Display-only mode (no pin inputs or controls) */
+      body.display-only .c-pin,
+      body.display-only .c-pin-inline,
+      body.display-only .pin-row,
+      body.display-only #downloadState {
+        display: none !important;
+      }
+      body.display-only #status {
+        margin-top: 0;
+      }
     </style>
   </head>
   <body class="teacher-shell">
@@ -788,6 +933,7 @@
             <img src="st-klemens-logo-white.png" alt="Gymnasium logo" />
           </div>
           <div class="c-message" id="cMessage">Waiting for data</div>
+          <div id="cPinBadge" class="pin-badge">PIN</div>
           <div class="c-pin-inline">
             <input id="cPinInputInline" type="text" maxlength="5" placeholder="PIN" />
             <button id="cConnectBtnInline">Go</button>
@@ -879,6 +1025,38 @@
       </section>
     </div>
 
+    <div id="breakdownOverlay" class="breakdown-overlay">
+      <div id="breakdownCard" class="breakdown-card">
+        <div class="breakdown-header">
+          <div class="title">Classroom climate</div>
+          <div class="subtitle">Last minute responses</div>
+        </div>
+        <div class="breakdown-bars">
+          <div class="breakdown-row">
+            <div class="breakdown-label"><span class="bd-dot bd-ok"></span>Engaged / OK</div>
+            <div class="breakdown-track"><div id="fillOk" class="breakdown-fill fill-ok"></div></div>
+            <div id="valOk" class="breakdown-val">0%</div>
+          </div>
+          <div class="breakdown-row">
+            <div class="breakdown-label"><span class="bd-dot bd-overloaded"></span>Overloaded</div>
+            <div class="breakdown-track"><div id="fillOverloaded" class="breakdown-fill fill-overloaded"></div></div>
+            <div id="valOverloaded" class="breakdown-val">0%</div>
+          </div>
+          <div class="breakdown-row">
+            <div class="breakdown-label"><span class="bd-dot bd-tired"></span>Tired</div>
+            <div class="breakdown-track"><div id="fillTired" class="breakdown-fill fill-tired"></div></div>
+            <div id="valTired" class="breakdown-val">0%</div>
+          </div>
+          <div class="breakdown-row">
+            <div class="breakdown-label"><span class="bd-dot bd-lost"></span>Lost / Confused</div>
+            <div class="breakdown-track"><div id="fillLost" class="breakdown-fill fill-lost"></div></div>
+            <div id="valLost" class="breakdown-val">0%</div>
+          </div>
+        </div>
+        <div class="breakdown-footer">Tap anywhere to close</div>
+      </div>
+    </div>
+
     <script>
       const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
       let theme = prefersDark ? "dark" : "light";
@@ -897,6 +1075,7 @@
 
       let pollTimer = null;
       let pin = "";
+      let breakdownVisible = false;
 
       const statusEl = document.getElementById("status");
       const sensorsEl = document.getElementById("sensors");
@@ -911,6 +1090,12 @@
       const cPinInputInline = document.getElementById("cPinInputInline");
       const cConnectBtnInline = document.getElementById("cConnectBtnInline");
       const pinInput = document.getElementById("pinInput");
+      const connectBtn = document.getElementById("connectBtn");
+      const cPinBadge = document.getElementById("cPinBadge");
+      const breakdownOverlay = document.getElementById("breakdownOverlay");
+      const breakdownCard = document.getElementById("breakdownCard");
+      const cCenter = document.querySelector(".c-center");
+      let lastBreakdown = computeBreakdown([], 60_000);
 
       // Simple in-memory histories (per minute) for charting
       const co2History = new Map(); // minuteKey -> ppm
@@ -928,6 +1113,7 @@
         document.body.classList.toggle("compact-mode", useCompact);
         if (compactView) compactView.style.display = useCompact ? "block" : "none";
         if (regularView) regularView.style.display = useCompact ? "none" : "block";
+        updatePinUI();
       }
 
       const minuteKey = (ts) => {
@@ -940,6 +1126,7 @@
         if (pinInput) pinInput.value = newPin;
         if (cPinInput) cPinInput.value = newPin;
         if (cPinInputInline) cPinInputInline.value = newPin;
+        updatePinUI();
       }
 
       function pruneHistory(map, keep = 120) {
@@ -1309,6 +1496,38 @@
         return { counts, pct, dominant, total, windowMs, recentCount: total };
       }
 
+      function updateBreakdownOverlay(breakdown) {
+        if (!breakdown) return;
+        lastBreakdown = breakdown;
+        const safePct = (v) => Math.max(0, Math.min(100, v || 0));
+        const entries = [
+          ["ok", "valOk", "fillOk"],
+          ["overloaded", "valOverloaded", "fillOverloaded"],
+          ["tired", "valTired", "fillTired"],
+          ["lost", "valLost", "fillLost"],
+        ];
+        entries.forEach(([key, valId, fillId]) => {
+          const pct = safePct(breakdown.pct?.[key]);
+          const valEl = document.getElementById(valId);
+          const fillEl = document.getElementById(fillId);
+          if (valEl) valEl.textContent = `${pct}%`;
+          if (fillEl) fillEl.style.width = `${pct}%`;
+        });
+      }
+
+      function showBreakdown() {
+        if (!breakdownOverlay || !lastBreakdown) return;
+        updateBreakdownOverlay(lastBreakdown);
+        breakdownOverlay.classList.add("show");
+        breakdownVisible = true;
+      }
+
+      function hideBreakdown() {
+        if (!breakdownOverlay) return;
+        breakdownOverlay.classList.remove("show");
+        breakdownVisible = false;
+      }
+
       function renderSummary(data) {
         const envVals = {
           co2: data?.last_sensor?.sensors?.eco2_ppm ?? null,
@@ -1322,6 +1541,7 @@
         };
 
         const breakdown = computeBreakdown(data?.emotions || []);
+        updateBreakdownOverlay(breakdown);
         const dominant = breakdown.dominant;
 
         const color =
@@ -1529,6 +1749,40 @@
         }
       }
 
+      function pinFromQuery() {
+        try {
+          const params = new URLSearchParams(window.location.search);
+          const qPin = params.get("pin") || params.get("class_pin");
+          return (qPin || "").trim();
+        } catch (e) {
+          return "";
+        }
+      }
+
+      let pinEditMode = false;
+      function updatePinUI() {
+        const hasPin = !!pin;
+        const compact = document.body.classList.contains("compact-mode");
+        const showInputs = !compact || !hasPin || pinEditMode;
+        const showBadge = compact && hasPin && !pinEditMode;
+
+        const inputs = [pinInput, cPinInput, cPinInputInline];
+        const buttons = [connectBtn, cConnectBtn, cConnectBtnInline];
+        inputs.forEach((inp) => {
+          if (!inp) return;
+          inp.readOnly = false;
+          inp.style.display = showInputs ? "inline-flex" : "none";
+        });
+        buttons.forEach((btn) => {
+          if (!btn) return;
+          btn.style.display = showInputs ? "inline-flex" : "none";
+        });
+        if (cPinBadge) {
+          cPinBadge.style.display = showBadge ? "inline-flex" : "none";
+          cPinBadge.textContent = hasPin ? `${pin}` : "";
+        }
+      }
+
       function connectWithPin(entered) {
         const pinVal = (entered || "").trim();
         if (!pinVal) {
@@ -1536,6 +1790,7 @@
           setStatusCompact("Please enter a PIN.");
           return;
         }
+        pinEditMode = false;
         setPin(pinVal);
         localStorage.setItem("class_pin", pinVal);
         setStatusCompact("Connecting…");
@@ -1554,12 +1809,44 @@
       if (cConnectBtnInline) {
         cConnectBtnInline.onclick = () => connectWithPin(cPinInputInline?.value || "");
       }
+      if (cPinBadge) {
+        cPinBadge.onclick = () => {
+          pinEditMode = true;
+          updatePinUI();
+          if (cPinInput) {
+            cPinInput.focus();
+            cPinInput.select();
+          }
+        };
+      }
+      if (cCenter) {
+        cCenter.onclick = () => {
+          if (!pin) return;
+          if (breakdownVisible) hideBreakdown();
+          else showBreakdown();
+        };
+      }
+      if (breakdownOverlay) breakdownOverlay.onclick = hideBreakdown;
+      if (breakdownCard) breakdownCard.onclick = (e) => e.stopPropagation();
       if (downloadBtn) downloadBtn.onclick = downloadClassState;
       const savedPin = localStorage.getItem("class_pin");
-      if (savedPin) {
-        setPin(savedPin);
-        fetchState();
-        pollTimer = setInterval(fetchState, 5000);
+      const paramPin = pinFromQuery();
+      const params = new URLSearchParams(window.location.search);
+      const displayOnly = (() => {
+        const raw = params.get("display") || params.get("display_only") || params.get("readonly");
+        if (raw == null) return false;
+        const val = raw.toString().toLowerCase();
+        return val === "" || val === "1" || val === "true" || val === "yes";
+      })();
+
+      if (displayOnly) {
+        document.body.classList.add("display-only");
+        if (downloadBtn) downloadBtn.style.display = "none";
+      }
+      if (paramPin) {
+        connectWithPin(paramPin);
+      } else if (savedPin) {
+        connectWithPin(savedPin);
       }
       applyMode();
       window.addEventListener("resize", applyMode);

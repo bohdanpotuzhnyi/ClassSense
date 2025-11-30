@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * ClassSense Node web server (no external deps).
+ * ClassSense Node web server (Postgres optional via `pg`).
  *
  * - Serves static UI at /slider and /buttons (randomly chosen on /).
  * - API:
@@ -21,12 +21,19 @@ const url = require("url");
 
 const WEB_PORT = Number(process.env.WEB_PORT || 4227);
 const API_PORT = process.env.API_PORT ? Number(process.env.API_PORT) : null;
+const DB_URL = process.env.PG_CONNECTION_STRING || process.env.DATABASE_URL || null;
+const DB_SSL =
+  process.env.PG_SSL === "true"
+    ? { rejectUnauthorized: false }
+    : process.env.PG_SSL === "false"
+    ? false
+    : undefined;
 
 const ROOT = __dirname;
 const STATIC_ROOT = path.join(ROOT, "static");
 
 // In-memory store
-const store = {
+const memStore = {
   classes: {},
 };
 
@@ -37,52 +44,146 @@ const EMOTION_LIMIT = Number.isFinite(Number(process.env.EMOTION_LIMIT))
 const utcNow = () => new Date().toISOString();
 
 function generatePin() {
-  let pin;
-  do {
-    pin = Math.floor(Math.random() * 100000)
-      .toString()
-      .padStart(5, "0");
-  } while (store.classes[pin]);
-  return pin;
+  return Math.floor(Math.random() * 100000)
+    .toString()
+    .padStart(5, "0");
 }
 
-function createClass(metadata = {}) {
-  const pin = generatePin();
-  store.classes[pin] = {
-    created_at: utcNow(),
-    metadata,
-    last_sensor: null,
-    last_sensor_at: null,
-    emotions: [],
-  };
-  return pin;
-}
-
-function upsertSensor(pin, payload) {
-  const cls = store.classes[pin];
-  if (!cls) throw new Error("class_not_found");
-  cls.last_sensor = payload;
-  cls.last_sensor_at = utcNow();
-}
-
-function addEmotion(pin, payload) {
-  const cls = store.classes[pin];
-  if (!cls) throw new Error("class_not_found");
-  cls.emotions.push({ received_at: utcNow(), payload });
-  cls.emotions = cls.emotions.slice(-EMOTION_LIMIT);
-}
-
-function getState(pin) {
-  const cls = store.classes[pin];
-  if (!cls) throw new Error("class_not_found");
+function createMemoryStore() {
+  const classes = memStore.classes;
   return {
-    pin,
-    created_at: cls.created_at,
-    metadata: cls.metadata,
-    last_sensor: cls.last_sensor,
-    last_sensor_at: cls.last_sensor_at,
-    emotions: cls.emotions,
+    async createClass(metadata = {}) {
+      let pin;
+      let tries = 0;
+      do {
+        pin = generatePin();
+        tries += 1;
+        if (tries > 1000) throw new Error("pin_generation_failed");
+      } while (classes[pin]);
+      classes[pin] = {
+        created_at: utcNow(),
+        metadata,
+        last_sensor: null,
+        last_sensor_at: null,
+        emotions: [],
+      };
+      return pin;
+    },
+    async upsertSensor(pin, payload) {
+      const cls = classes[pin];
+      if (!cls) throw new Error("class_not_found");
+      cls.last_sensor = payload;
+      cls.last_sensor_at = utcNow();
+    },
+    async addEmotion(pin, payload) {
+      const cls = classes[pin];
+      if (!cls) throw new Error("class_not_found");
+      cls.emotions.push({ received_at: utcNow(), payload });
+      cls.emotions = cls.emotions.slice(-EMOTION_LIMIT);
+    },
+    async getState(pin) {
+      const cls = classes[pin];
+      if (!cls) throw new Error("class_not_found");
+      return {
+        pin,
+        created_at: cls.created_at,
+        metadata: cls.metadata,
+        last_sensor: cls.last_sensor,
+        last_sensor_at: cls.last_sensor_at,
+        emotions: cls.emotions,
+      };
+    },
   };
+}
+
+function createPgStore(pool) {
+  const uniquePin = async () => {
+    let tries = 0;
+    while (tries < 5000) {
+      const pin = generatePin();
+      tries += 1;
+      try {
+        await pool.query("INSERT INTO classes (pin, metadata) VALUES ($1, $2)", [pin, {}]);
+        return pin;
+      } catch (e) {
+        // 23505 -> unique violation
+        if (e && e.code === "23505") continue;
+        throw e;
+      }
+    }
+    throw new Error("pin_generation_failed");
+  };
+
+  const ensureClass = async (pin) => {
+    const { rows } = await pool.query("SELECT pin FROM classes WHERE pin = $1", [pin]);
+    if (!rows.length) throw new Error("class_not_found");
+  };
+
+  return {
+    async createClass(metadata = {}) {
+      // First try generating/inserting with empty metadata, then update with actual data
+      const pin = await uniquePin();
+      await pool.query("UPDATE classes SET metadata = $1 WHERE pin = $2", [metadata, pin]);
+      return pin;
+    },
+    async upsertSensor(pin, payload) {
+      const res = await pool.query(
+        "UPDATE classes SET last_sensor = $1, last_sensor_at = NOW() WHERE pin = $2",
+        [payload, pin]
+      );
+      if (res.rowCount === 0) throw new Error("class_not_found");
+    },
+    async addEmotion(pin, payload) {
+      try {
+        await pool.query("INSERT INTO emotions (pin, payload) VALUES ($1, $2)", [pin, payload]);
+      } catch (e) {
+        if (e && e.code === "23503") throw new Error("class_not_found");
+        throw e;
+      }
+    },
+    async getState(pin) {
+      const { rows } = await pool.query(
+        "SELECT pin, created_at, metadata, last_sensor, last_sensor_at FROM classes WHERE pin = $1",
+        [pin]
+      );
+      if (!rows.length) throw new Error("class_not_found");
+      const cls = rows[0];
+      const emo = await pool.query(
+        "SELECT received_at, payload FROM emotions WHERE pin = $1 ORDER BY received_at ASC LIMIT $2",
+        [pin, EMOTION_LIMIT]
+      );
+      return {
+        pin: cls.pin,
+        created_at: cls.created_at,
+        metadata: cls.metadata,
+        last_sensor: cls.last_sensor,
+        last_sensor_at: cls.last_sensor_at,
+        emotions: emo.rows,
+      };
+    },
+  };
+}
+
+let dataStore = null;
+if (DB_URL) {
+  try {
+    const { Pool } = require("pg");
+    const parsed = new URL(DB_URL);
+    const poolCfg = { connectionString: DB_URL, ssl: DB_SSL };
+    if (!parsed.hostname) {
+      // Allow socket-based connections when host is omitted in URL (e.g., postgres://user:pass@:5432/db)
+      poolCfg.host = process.env.PG_HOST || "/var/run/postgresql";
+    }
+    const pool = new Pool(poolCfg);
+    pool.on("error", (err) => console.error("Postgres pool error", err));
+    dataStore = createPgStore(pool);
+    console.log("Using PostgreSQL store");
+  } catch (e) {
+    console.warn("Failed to init Postgres store, falling back to memory:", e.message);
+    dataStore = createMemoryStore();
+  }
+} else {
+  dataStore = createMemoryStore();
 }
 
 // Helpers
@@ -176,8 +277,12 @@ async function handleApi(req, res, pathname) {
   if (req.method === "POST" && pathname === "/api/classes") {
     const body = await parseBody(req);
     if (body._error) return sendJson(res, 400, { error: body._error });
-    const pin = createClass(body || {});
-    sendJson(res, 201, { pin });
+    try {
+      const pin = await dataStore.createClass(body || {});
+      sendJson(res, 201, { pin });
+    } catch (e) {
+      sendJson(res, 500, { error: "failed_to_create_class" });
+    }
     return true;
   }
 
@@ -188,7 +293,7 @@ async function handleApi(req, res, pathname) {
     const pin = req.headers["x-class-pin"] || body.class_pin;
     if (!pin) return sendJson(res, 400, { error: "missing_class_pin" });
     try {
-      upsertSensor(pin, body);
+      await dataStore.upsertSensor(pin, body);
       sendJson(res, 200, { status: "ingest_ok" });
     } catch (e) {
       sendJson(res, 404, { error: "class_not_found" });
@@ -203,7 +308,7 @@ async function handleApi(req, res, pathname) {
     const body = await parseBody(req);
     if (body._error) return sendJson(res, 400, { error: body._error });
     try {
-      upsertSensor(pin, body);
+      await dataStore.upsertSensor(pin, body);
       sendJson(res, 200, { status: "ingest_ok" });
     } catch (e) {
       sendJson(res, 404, { error: "class_not_found" });
@@ -214,7 +319,7 @@ async function handleApi(req, res, pathname) {
   const stateMatch = pathname.match(/^\/api\/classes\/(\d{5})\/state$/);
   if (req.method === "GET" && stateMatch) {
     try {
-      const state = getState(stateMatch[1]);
+      const state = await dataStore.getState(stateMatch[1]);
       sendJson(res, 200, state);
     } catch (e) {
       sendJson(res, 404, { error: "class_not_found" });
@@ -227,7 +332,7 @@ async function handleApi(req, res, pathname) {
     const body = await parseBody(req);
     if (body._error) return sendJson(res, 400, { error: body._error });
     try {
-      addEmotion(emotionsMatch[1], body);
+      await dataStore.addEmotion(emotionsMatch[1], body);
       sendJson(res, 200, { status: "recorded" });
     } catch (e) {
       sendJson(res, 404, { error: "class_not_found" });
