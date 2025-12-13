@@ -485,7 +485,7 @@
       .c-env-list {
         display: flex;
         flex-direction: column;
-        gap: 20px;
+        gap: 2px;
         flex: 1;
         justify-content: center;
       }
@@ -510,13 +510,13 @@
 
       .c-env-label {
         font-weight: 600;
-        font-size: 16px;
+        font-size: 22px;
         color: #0f172a;
       }
 
       .c-env-value {
         color: #64748b;
-        font-size: 13px;
+        font-size: 18px;
       }
 
       /* right: three small indicator circles */
@@ -531,6 +531,7 @@
         display: flex;
         align-items: center;
         gap: 12px;
+        width: 100%;
       }
 
       .c-env-icon {
@@ -554,9 +555,19 @@
         box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.4);
       }
 
-      .c-env-dot.is-on {
+      .c-env-dot.is-good {
         background: #95c11f;
         box-shadow: 0 0 0 4px rgba(149, 193, 31, 0.25);
+      }
+
+      .c-env-dot.is-warning {
+        background: #f59e0b;
+        box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.25);
+      }
+
+      .c-env-dot.is-danger {
+        background: #ef4444;
+        box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.25);
       }
 
       .c-env-footer {
@@ -912,19 +923,18 @@
   <body class="teacher-shell">
     <div id="compactView">
       <div class="c-pin">
-        <input id="cPinInput" type="text" maxlength="5" placeholder="PIN" />
-        <button id="cConnectBtn">Go</button>
+        <input id="cPinInput" type="text" maxlength="5" placeholder="PIN" data-i18n-placeholder="pin_short_placeholder" />
+        <button id="cConnectBtn" data-i18n="connect_short">Los</button>
       </div>
       <div class="display">
         <div class="c-env">
-          <div class="eyebrow">Environment</div>
           <div class="c-env-list" id="cEnvList"></div>
         </div>
         <div class="c-center-wrap">
-          <div class="c-center-heading">Classroom climate</div>
+          <div class="c-center-heading" data-i18n="compact_climate_heading">Klassenklima</div>
           <div class="c-center">
             <div class="c-circle" id="cCircle"><span id="cEmoji" class="c-icon"></span></div>
-            <div class="c-label" id="cLabel">WAITING</div>
+            <div class="c-label" id="cLabel" data-i18n="state_waiting_label">WARTET</div>
           </div>
         </div>
         <div class="c-right">
@@ -932,11 +942,11 @@
             <div style="font-size:24px;font-weight:700;letter-spacing:0.04em;">ClassSense</div>
             <img src="st-klemens-logo-white.png" alt="Gymnasium logo" />
           </div>
-          <div class="c-message" id="cMessage">Waiting for data</div>
+          <div class="c-message" id="cMessage" data-i18n="compact_waiting_message">Warte auf Daten</div>
           <div id="cPinBadge" class="pin-badge">PIN</div>
           <div class="c-pin-inline">
-            <input id="cPinInputInline" type="text" maxlength="5" placeholder="PIN" />
-            <button id="cConnectBtnInline">Go</button>
+            <input id="cPinInputInline" type="text" maxlength="5" placeholder="PIN" data-i18n-placeholder="pin_short_placeholder" />
+            <button id="cConnectBtnInline" data-i18n="connect_short">Los</button>
           </div>
         </div>
       </div>
@@ -944,43 +954,43 @@
 
       <div id="regularView" class="page">
         <header class="topbar">
-        <div class="brand">Teacher Dashboard</div>
+        <div class="brand" data-i18n="teacher_dashboard">Lehrer-Dashboard</div>
         <div class="actions">
           <div class="logo-chip">
             <img src="st-klemens-logo-white.png" alt="Gymnasium logo" />
           </div>
-          <button id="downloadState" class="ghost" disabled>Download class state</button>
-          <button id="themeToggle" class="ghost">Dark</button>
+          <button id="downloadState" class="ghost" disabled data-i18n="download_state">Klassenstatus herunterladen</button>
+          <button id="themeToggle" class="ghost" data-i18n="theme_dark">Dunkel</button>
         </div>
       </header>
 
       <section class="card">
         <div class="pin-row">
-          <input id="pinInput" type="text" maxlength="5" placeholder="Class PIN" />
-          <button id="connectBtn" class="primary">Connect & Poll</button>
+          <input id="pinInput" type="text" maxlength="5" placeholder="Klassen-PIN" data-i18n-placeholder="pin_placeholder" />
+          <button id="connectBtn" class="primary" data-i18n="connect_poll">Verbinden & abrufen</button>
         </div>
-        <div id="status" class="status">Enter a class PIN to view activity.</div>
+        <div id="status" class="status" data-i18n="status_prompt">Gib eine Klassen-PIN ein, um die Aktivität zu sehen.</div>
       </section>
 
       <section class="card">
         <div class="section-heading" style="display:flex;justify-content:space-between;align-items:center;">
           <div>
-            <div class="eyebrow">Room snapshot</div>
-            <h3>Latest sensor snapshot</h3>
+            <div class="eyebrow" data-i18n="room_snapshot">Raum-Überblick</div>
+            <h3 data-i18n="latest_sensor_snapshot">Letzte Sensordaten</h3>
           </div>
-          <div class="pill muted" id="sensorPill">Waiting</div>
+          <div class="pill muted" id="sensorPill" data-i18n="pill_waiting">Wartet</div>
         </div>
         <div id="sensors" class="env-row"></div>
-        <div class="muted" id="lastSensor">Last sensor: none</div>
+        <div class="muted" id="lastSensor" data-i18n="last_sensor">Letzter Sensor: keiner</div>
       </section>
 
       <section class="card summary-card" id="summaryCard">
         <div class="section-heading" style="display:flex;justify-content:space-between;align-items:center;">
           <div>
-            <div class="eyebrow">Classroom climate</div>
-            <h3>Summary</h3>
+            <div class="eyebrow" data-i18n="classroom_climate">Klassenklima</div>
+            <h3 data-i18n="summary_title">Zusammenfassung</h3>
           </div>
-          <div class="pill muted" id="summaryPill">Waiting</div>
+          <div class="pill muted" id="summaryPill" data-i18n="pill_waiting">Wartet</div>
         </div>
 
         <div class="summary-grid">
@@ -989,13 +999,13 @@
               <span id="summaryIcon"></span>
             </div>
             <div class="state-meta">
-              <div id="summaryLabel" class="state-label">WAITING</div>
+              <div id="summaryLabel" class="state-label" data-i18n="state_waiting_label">WARTET</div>
               <div id="summaryBreakdown" class="state-breakdown">—</div>
             </div>
           </div>
 
           <div class="summary-suggestion" id="summarySuggestion">
-            Waiting for data
+            <span data-i18n="summary_suggestion_waiting">Warte auf Daten</span>
           </div>
         </div>
       </section>
@@ -1003,22 +1013,22 @@
       <section class="card">
         <div class="section-heading" style="display:flex;justify-content:space-between;align-items:center;">
           <div>
-            <div class="eyebrow">Classroom climate</div>
-            <h3>Class signals</h3>
+            <div class="eyebrow" data-i18n="classroom_climate">Klassenklima</div>
+            <h3 data-i18n="class_signals">Klassensignale</h3>
           </div>
-          <div class="pill muted" id="livePill">Waiting</div>
+          <div class="pill muted" id="livePill" data-i18n="pill_waiting">Wartet</div>
         </div>
         <div class="charts">
           <div class="chart-card">
-            <h4>Per-minute CO₂ & emotions</h4>
+            <h4 data-i18n="chart_title">CO₂ & Emotionen pro Minute</h4>
             <canvas id="signalChart"></canvas>
             <div class="legend">
-              <span><span class="dot" style="background:#0ea5e9;"></span>Too fast</span>
-              <span><span class="dot" style="background:#6366f1;"></span>Overloaded</span>
-              <span><span class="dot" style="background:#22c55e;"></span>OK</span>
-              <span><span class="dot" style="background:#facc15;"></span>Tired</span>
-              <span><span class="dot" style="background:#8b5cf6;"></span>Focus avg</span>
-              <span><span class="dot" style="background:#f97316;"></span>CO₂ (ppm)</span>
+              <span><span class="dot" style="background:#0ea5e9;"></span><span data-i18n="legend_too_fast">Zu schnell</span></span>
+              <span><span class="dot" style="background:#6366f1;"></span><span data-i18n="legend_overloaded">Überfordert</span></span>
+              <span><span class="dot" style="background:#22c55e;"></span><span data-i18n="legend_ok">OK</span></span>
+              <span><span class="dot" style="background:#facc15;"></span><span data-i18n="legend_tired">Müde</span></span>
+              <span><span class="dot" style="background:#8b5cf6;"></span><span data-i18n="legend_focus_avg">Fokus Ø</span></span>
+              <span><span class="dot" style="background:#f97316;"></span><span data-i18n="legend_co2">CO₂ (ppm)</span></span>
             </div>
           </div>
         </div>
@@ -1028,50 +1038,232 @@
     <div id="breakdownOverlay" class="breakdown-overlay">
       <div id="breakdownCard" class="breakdown-card">
         <div class="breakdown-header">
-          <div class="title">Classroom climate</div>
-          <div class="subtitle">Last minute responses</div>
+          <div class="title" data-i18n="breakdown_title">Klassenklima</div>
+          <div class="subtitle" data-i18n="breakdown_subtitle">Antworten der letzten Minute</div>
         </div>
         <div class="breakdown-bars">
           <div class="breakdown-row">
-            <div class="breakdown-label"><span class="bd-dot bd-ok"></span>Engaged / OK</div>
+            <div class="breakdown-label"><span class="bd-dot bd-ok"></span><span data-i18n="breakdown_ok">Im Flow / OK</span></div>
             <div class="breakdown-track"><div id="fillOk" class="breakdown-fill fill-ok"></div></div>
             <div id="valOk" class="breakdown-val">0%</div>
           </div>
           <div class="breakdown-row">
-            <div class="breakdown-label"><span class="bd-dot bd-overloaded"></span>Overloaded</div>
+            <div class="breakdown-label"><span class="bd-dot bd-overloaded"></span><span data-i18n="breakdown_overloaded">Überfordert</span></div>
             <div class="breakdown-track"><div id="fillOverloaded" class="breakdown-fill fill-overloaded"></div></div>
             <div id="valOverloaded" class="breakdown-val">0%</div>
           </div>
           <div class="breakdown-row">
-            <div class="breakdown-label"><span class="bd-dot bd-tired"></span>Tired</div>
+            <div class="breakdown-label"><span class="bd-dot bd-tired"></span><span data-i18n="breakdown_tired">Müde</span></div>
             <div class="breakdown-track"><div id="fillTired" class="breakdown-fill fill-tired"></div></div>
             <div id="valTired" class="breakdown-val">0%</div>
           </div>
           <div class="breakdown-row">
-            <div class="breakdown-label"><span class="bd-dot bd-lost"></span>Lost / Confused</div>
+            <div class="breakdown-label"><span class="bd-dot bd-lost"></span><span data-i18n="breakdown_lost">Verloren / Unsicher</span></div>
             <div class="breakdown-track"><div id="fillLost" class="breakdown-fill fill-lost"></div></div>
             <div id="valLost" class="breakdown-val">0%</div>
           </div>
         </div>
-        <div class="breakdown-footer">Tap anywhere to close</div>
+        <div class="breakdown-footer" data-i18n="breakdown_footer">Zum Schließen tippen</div>
       </div>
     </div>
 
     <script>
+      const translations = {
+        de: {
+          theme_light: "Hell",
+          theme_dark: "Dunkel",
+          teacher_dashboard: "Lehrer-Dashboard",
+          download_state: "Klassenstatus herunterladen",
+          pin_placeholder: "Klassen-PIN",
+          pin_short_placeholder: "PIN",
+          connect_poll: "Verbinden & abrufen",
+          connect_short: "Los",
+          status_prompt: "Gib eine Klassen-PIN ein, um die Aktivität zu sehen.",
+          status_prompt_compact: "Gib eine Klassen-PIN ein.",
+          status_connected_with_count: "Mit {pin} verbunden, Einträge: {count}",
+          status_connected: "Mit {pin} verbunden",
+          status_fetch_failed: "Status konnte nicht geladen werden.",
+          status_pin_required: "Bitte eine PIN eingeben.",
+          status_connecting: "Verbinde…",
+          status_download_ok: "Status für {pin} heruntergeladen",
+          status_download_fail: "Konnte Klassenstatus nicht herunterladen.",
+          pill_live: "Live",
+          pill_waiting: "Wartet",
+          room_snapshot: "Raum-Überblick",
+          latest_sensor_snapshot: "Letzte Sensordaten",
+          last_sensor: "Letzter Sensor: {time}",
+          none: "keine",
+          classroom_climate: "Klassenklima",
+          summary_title: "Zusammenfassung",
+          summary_suggestion_waiting: "Warte auf Daten",
+          class_signals: "Klassensignale",
+          chart_title: "CO₂ & Emotionen pro Minute",
+          legend_too_fast: "Zu schnell",
+          legend_overloaded: "Überfordert",
+          legend_ok: "OK",
+          legend_tired: "Müde",
+          legend_focus_avg: "Fokus Ø",
+          legend_co2: "CO₂ (ppm)",
+          breakdown_title: "Klassenklima",
+          breakdown_subtitle: "Antworten der letzten Minute",
+          breakdown_ok: "Im Flow / OK",
+          breakdown_overloaded: "Überfordert",
+          breakdown_tired: "Müde",
+          breakdown_lost: "Verloren / Unsicher",
+          breakdown_footer: "Zum Schließen tippen",
+          compact_environment: "Umgebung",
+          compact_climate_heading: "Klassenklima",
+          state_waiting_label: "WARTET",
+          compact_waiting_message: "Warte auf Daten",
+          chart_no_data: "Noch keine Daten. Verbinden, um zu starten.",
+          chart_axis_left: "Emotionen pro Typ / Fokus Ø (0–100)",
+          chart_axis_right: "CO₂ {min}–{max} ppm",
+          state_engaged: "IM FLOW",
+          state_lost: "VERLOREN",
+          state_overload: "ÜBERLASTET",
+          state_tired: "MÜDE",
+          state_waiting: "WARTET",
+          state_idle: "WARTET",
+          state_monitor: "BEOBACHTEN",
+          message_open_window: "Fenster öffnen",
+          message_waiting_feedback: "Warte auf Feedback",
+          message_engaged: "Klasse ist im Flow",
+          message_overloaded: "Tempo drosseln & wiederholen",
+          message_tired: "Zeit für eine Pause",
+          message_lost: "Kurz stoppen & klären",
+          message_monitor: "Klasse beobachten",
+          summary_no_recent: "Kein aktuelles Feedback (letzte {span}s)",
+          summary_breakdown:
+            "OK {ok}% · Verloren {lost}% · Überlastet {overload}% · Müde {tired}% (letzte {span}s)",
+          env_air: "Luft",
+          env_temp: "Temperatur",
+          env_noise: "Lärm",
+          env_voc: "VOC",
+          env_lux: "Licht",
+          env_footer: "Tippe für Werte",
+          not_available: "k. A.",
+          sensor_temp_label: "°C",
+          sensor_co2_label: "CO₂",
+          sensor_noise_label: "🔊",
+          sensor_lux_label: "Lux",
+          sensor_voc_label: "VOC",
+        },
+        en: {
+          theme_light: "Light",
+          theme_dark: "Dark",
+          teacher_dashboard: "Teacher Dashboard",
+          download_state: "Download class state",
+          pin_placeholder: "Class PIN",
+          pin_short_placeholder: "PIN",
+          connect_poll: "Connect & Poll",
+          connect_short: "Go",
+          status_prompt: "Enter a class PIN to view activity.",
+          status_prompt_compact: "Enter a class PIN.",
+          status_connected_with_count: "Connected to {pin}, entries: {count}",
+          status_connected: "Connected to {pin}",
+          status_fetch_failed: "Failed to fetch state.",
+          status_pin_required: "Please enter a PIN.",
+          status_connecting: "Connecting…",
+          status_download_ok: "Downloaded state for {pin}",
+          status_download_fail: "Could not download class state.",
+          pill_live: "Live",
+          pill_waiting: "Waiting",
+          room_snapshot: "Room snapshot",
+          latest_sensor_snapshot: "Latest sensor snapshot",
+          last_sensor: "Last sensor: {time}",
+          none: "none",
+          classroom_climate: "Classroom climate",
+          summary_title: "Summary",
+          summary_suggestion_waiting: "Waiting for data",
+          class_signals: "Class signals",
+          chart_title: "Per-minute CO₂ & emotions",
+          legend_too_fast: "Too fast",
+          legend_overloaded: "Overloaded",
+          legend_ok: "OK",
+          legend_tired: "Tired",
+          legend_focus_avg: "Focus avg",
+          legend_co2: "CO₂ (ppm)",
+          breakdown_title: "Classroom climate",
+          breakdown_subtitle: "Last minute responses",
+          breakdown_ok: "Engaged / OK",
+          breakdown_overloaded: "Overloaded",
+          breakdown_tired: "Tired",
+          breakdown_lost: "Lost / Confused",
+          breakdown_footer: "Tap anywhere to close",
+          compact_environment: "Environment",
+          compact_climate_heading: "Classroom climate",
+          state_waiting_label: "WAITING",
+          compact_waiting_message: "Waiting for data",
+          chart_no_data: "No data yet. Connect to start polling.",
+          chart_axis_left: "Emotions per type / Focus avg (0–100)",
+          chart_axis_right: "CO₂ {min}–{max} ppm",
+          state_engaged: "ENGAGED",
+          state_lost: "LOST",
+          state_overload: "OVERLOAD",
+          state_tired: "TIRED",
+          state_waiting: "WAITING",
+          state_idle: "WAITING",
+          state_monitor: "MONITOR",
+          message_open_window: "Open the window",
+          message_waiting_feedback: "Waiting for feedback",
+          message_engaged: "Class is engaged",
+          message_overloaded: "Slow down & review",
+          message_tired: "Time for a break",
+          message_lost: "Pause & clarify",
+          message_monitor: "Monitor class",
+          summary_no_recent: "No recent feedback (last {span}s)",
+          summary_breakdown:
+            "OK {ok}% · Lost {lost}% · Overload {overload}% · Tired {tired}% (last {span}s)",
+          env_air: "Air",
+          env_temp: "Temp",
+          env_noise: "Noise",
+          env_voc: "VOC",
+          env_lux: "Lux",
+          env_footer: "Tap for values",
+          not_available: "n/a",
+          sensor_temp_label: "°C",
+          sensor_co2_label: "CO₂",
+          sensor_noise_label: "🔊",
+          sensor_lux_label: "Lux",
+          sensor_voc_label: "VOC",
+        },
+      };
+
+      const fallbackLang = "de";
+      const supportedLangs = Object.keys(translations);
+      const normalizeLang = (lang) => (lang || "").toLowerCase();
+      const detectLanguage = () => {
+        const params = new URLSearchParams(window.location.search);
+        const qLang = normalizeLang(params.get("lang"));
+        if (supportedLangs.includes(qLang)) {
+          localStorage?.setItem?.("lang", qLang);
+          return qLang;
+        }
+        const stored = normalizeLang(localStorage?.getItem?.("lang"));
+        if (supportedLangs.includes(stored)) return stored;
+        return fallbackLang;
+      };
+
+      let lang = detectLanguage();
+
+      const t = (key, vars = {}) => {
+        const dict = translations[lang] || translations[fallbackLang];
+        const template = dict[key] ?? translations[fallbackLang]?.[key] ?? key;
+        return template.replace(/\{(\w+)\}/g, (_, k) => (vars[k] != null ? vars[k] : `{${k}}`));
+      };
+
+      document.documentElement?.setAttribute("lang", lang);
+
       const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
       let theme = prefersDark ? "dark" : "light";
-      const setTheme = (th) => document.documentElement.classList.toggle("dark", th === "dark");
-      setTheme(theme);
-      document.addEventListener("DOMContentLoaded", () => {
-        const themeBtn = document.getElementById("themeToggle");
-        if (themeBtn) {
-          themeBtn.onclick = () => {
-            theme = theme === "dark" ? "light" : "dark";
-            setTheme(theme);
-            themeBtn.textContent = theme === "dark" ? "Light" : "Dark";
-          };
-        }
-      });
+      const updateThemeLabel = () => {
+        if (themeBtn) themeBtn.textContent = theme === "dark" ? t("theme_light") : t("theme_dark");
+      };
+      const setTheme = (th) => {
+        theme = th;
+        document.documentElement.classList.toggle("dark", th === "dark");
+        updateThemeLabel();
+      };
 
       let pollTimer = null;
       let pin = "";
@@ -1082,6 +1274,7 @@
       const lastSensorEl = document.getElementById("lastSensor");
       const signalCanvas = document.getElementById("signalChart");
       const ctx = signalCanvas.getContext("2d");
+      const themeBtn = document.getElementById("themeToggle");
       const downloadBtn = document.getElementById("downloadState");
       const compactView = document.getElementById("compactView");
       const regularView = document.getElementById("regularView");
@@ -1089,9 +1282,15 @@
       const cConnectBtn = document.getElementById("cConnectBtn");
       const cPinInputInline = document.getElementById("cPinInputInline");
       const cConnectBtnInline = document.getElementById("cConnectBtnInline");
+      const cMessage = document.getElementById("cMessage");
       const pinInput = document.getElementById("pinInput");
       const connectBtn = document.getElementById("connectBtn");
       const cPinBadge = document.getElementById("cPinBadge");
+      const sensorPill = document.getElementById("sensorPill");
+      const summaryPill = document.getElementById("summaryPill");
+      const livePill = document.getElementById("livePill");
+      const summarySuggestion = document.getElementById("summarySuggestion");
+      const cLabelEl = document.getElementById("cLabel");
       const breakdownOverlay = document.getElementById("breakdownOverlay");
       const breakdownCard = document.getElementById("breakdownCard");
       const cCenter = document.querySelector(".c-center");
@@ -1143,8 +1342,30 @@
       }
 
       function setStatusCompact(msg) {
-        const msgEl = document.getElementById("cMessage");
-        if (msgEl) msgEl.textContent = msg;
+        if (cMessage) cMessage.textContent = msg;
+      }
+
+      function applyTranslations() {
+        document.documentElement?.setAttribute("lang", lang);
+        document.querySelectorAll("[data-i18n]").forEach((el) => {
+          const key = el.dataset.i18n;
+          if (!key) return;
+          el.textContent = t(key);
+        });
+        document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
+          const key = el.dataset.i18nPlaceholder;
+          if (key) el.setAttribute("placeholder", t(key));
+        });
+        setStatus(t("status_prompt"));
+        setStatusCompact(t("status_prompt_compact"));
+        if (lastSensorEl) lastSensorEl.textContent = t("last_sensor", { time: t("none") });
+        if (sensorPill) sensorPill.textContent = t("pill_waiting");
+        if (summaryPill) summaryPill.textContent = t("pill_waiting");
+        if (livePill) livePill.textContent = t("pill_waiting");
+        if (summarySuggestion) summarySuggestion.textContent = t("summary_suggestion_waiting");
+        if (cLabelEl) cLabelEl.textContent = t("state_waiting_label");
+        if (cMessage) cMessage.textContent = t("compact_waiting_message");
+        updateThemeLabel();
       }
 
       function renderSensors(sensor) {
@@ -1159,24 +1380,29 @@
 
         const rows = [
           {
-            label: "°C",
-            value: s.temperature_c != null ? `${Math.round(s.temperature_c)}°C` : "n/a",
+            label: t("sensor_temp_label"),
+            value: s.temperature_c != null ? `${Math.round(s.temperature_c)}°C` : t("not_available"),
             status: statusFor("temperature", s.temperature_c),
           },
           {
-            label: "CO₂",
-            value: s.eco2_ppm != null ? `${Math.round(s.eco2_ppm)} ppm` : "n/a",
+            label: t("sensor_co2_label"),
+            value: s.eco2_ppm != null ? `${Math.round(s.eco2_ppm)} ppm` : t("not_available"),
             status: statusFor("co2", s.eco2_ppm),
           },
           {
-            label: "🔊",
-            value: s.noise_db != null ? `${Math.round(s.noise_db)} dB` : "n/a",
+            label: t("sensor_noise_label"),
+            value: s.noise_db != null ? `${Math.round(s.noise_db)} dB` : t("not_available"),
             status: statusFor("noise", s.noise_db),
           },
           {
-            label: "Lux",
-            value: s.brightness_lux != null ? `${Math.round(s.brightness_lux)} lx` : "n/a",
-            status: "good",
+            label: t("sensor_lux_label"),
+            value: s.brightness_lux != null ? `${Math.round(s.brightness_lux)} lx` : t("not_available"),
+            status: statusFor("lux", s.brightness_lux),
+          },
+          {
+            label: t("sensor_voc_label"),
+            value: s.voc_ppb != null ? `${Math.round(s.voc_ppb)} ppb` : t("not_available"),
+            status: statusFor("voc", s.voc_ppb),
           },
         ];
 
@@ -1190,7 +1416,7 @@
         `
           )
           .join("");
-        lastSensorEl.textContent = `Last sensor: ${sensor?.timestamp || "none"}`;
+        lastSensorEl.textContent = t("last_sensor", { time: sensor?.timestamp || t("none") });
 
         // Track CO₂ history for the chart (bucketed per minute)
         if (sensor?.sensors?.eco2_ppm != null) {
@@ -1234,7 +1460,7 @@
         if (!labels.length) {
           ctx.fillStyle = "#64748b";
           ctx.font = "14px sans-serif";
-          ctx.fillText("No data yet. Connect to start polling.", 12, 24);
+          ctx.fillText(t("chart_no_data"), 12, 24);
           return;
         }
 
@@ -1396,9 +1622,9 @@
         });
 
         ctx.textAlign = "left";
-        ctx.fillText("Emotions per type / Focus avg (0–100)", 8, 12);
+        ctx.fillText(t("chart_axis_left"), 8, 12);
         ctx.textAlign = "right";
-        ctx.fillText(`CO₂ ${minCo2}–${maxCo2} ppm`, w - 8, 12);
+        ctx.fillText(t("chart_axis_right", { min: minCo2, max: maxCo2 }), w - 8, 12);
       }
 
       async function fetchState() {
@@ -1411,17 +1637,15 @@
           aggregateEmotions(data.emotions || []);
           renderChart();
           renderSummary(data);
-          setStatus(`Connected to ${pin}, entries: ${data.emotions?.length || 0}`);
-          setStatusCompact(`Connected to ${pin}`);
-          const sensorPill = document.getElementById("sensorPill");
-          if (sensorPill) sensorPill.textContent = "Live";
-          const livePill = document.getElementById("livePill");
-          if (livePill) livePill.textContent = "Live";
+          setStatus(t("status_connected_with_count", { pin, count: data.emotions?.length || 0 }));
+          setStatusCompact(t("status_connected", { pin }));
+          if (sensorPill) sensorPill.textContent = t("pill_live");
+          if (livePill) livePill.textContent = t("pill_live");
           if (downloadBtn) downloadBtn.disabled = false;
           renderCompact(data);
         } catch (e) {
-          setStatus("Failed to fetch state.", true);
-          setStatusCompact("Failed to fetch state.");
+          setStatus(t("status_fetch_failed"), true);
+          setStatusCompact(t("status_fetch_failed"));
           if (downloadBtn) downloadBtn.disabled = true;
         }
       }
@@ -1430,7 +1654,7 @@
         if (val == null) return "warning";
         if (type === "co2") {
           if (val <= 800) return "good";
-          if (val <= 1200) return "warning";
+          if (val <= 1400) return "warning";
           return "danger";
         }
         if (type === "temperature") {
@@ -1441,6 +1665,17 @@
         if (type === "noise") {
           if (val <= 50) return "good";
           if (val <= 65) return "warning";
+          return "danger";
+        }
+        if (type === "voc") {
+          if (val <= 400) return "good";
+          if (val <= 2200) return "warning";
+          return "danger";
+        }
+        if (type === "lux") {
+          if (val >= 300 && val <= 750) return "good";
+          if (val >= 150 && val < 300) return "warning";
+          if (val > 750 && val <= 1000) return "warning";
           return "danger";
         }
         return "warning";
@@ -1533,11 +1768,15 @@
           co2: data?.last_sensor?.sensors?.eco2_ppm ?? null,
           temperature: data?.last_sensor?.sensors?.temperature_c ?? null,
           noise: data?.last_sensor?.sensors?.noise_db ?? null,
+          voc: data?.last_sensor?.sensors?.voc_ppb ?? null,
+          lux: data?.last_sensor?.sensors?.brightness_lux ?? null,
         };
         const envStatuses = {
           co2: envStatus("co2", envVals.co2),
           temperature: envStatus("temperature", envVals.temperature),
           noise: envStatus("noise", envVals.noise),
+          voc: envStatus("voc", envVals.voc),
+          lux: envStatus("lux", envVals.lux),
         };
 
         const breakdown = computeBreakdown(data?.emotions || []);
@@ -1555,36 +1794,37 @@
 
         const iconHtml =
           {
-            ok: `<img src="src/state-ok.svg" alt="Engaged" />`,
-            lost: `<img src="src/state-lost.svg" alt="Lost" />`,
-            overloaded: `<img src="src/state-overloaded.svg" alt="Overloaded" />`,
-            tired: `<img src="src/state-tired.svg" alt="Tired" />`,
-            idle: `<img src="src/state-ok.svg" alt="Idle" />`,
-          }[dominant] || `<img src="src/state-ok.svg" alt="State" />`;
+            ok: `<img src="src/state-ok.svg" alt="${t("state_engaged")}" />`,
+            lost: `<img src="src/state-lost.svg" alt="${t("state_lost")}" />`,
+            overloaded: `<img src="src/state-overloaded.svg" alt="${t("state_overload")}" />`,
+            tired: `<img src="src/state-tired.svg" alt="${t("state_tired")}" />`,
+            idle: `<img src="src/state-ok.svg" alt="${t("state_waiting")}" />`,
+          }[dominant] || `<img src="src/state-ok.svg" alt="${t("state_monitor")}" />`;
 
-        const label =
+        const labelKey =
           {
-            ok: "ENGAGED",
-            lost: "LOST",
-            overloaded: "OVERLOAD",
-            tired: "TIRED",
-            idle: "WAITING",
-          }[dominant] || "MONITOR";
+            ok: "state_engaged",
+            lost: "state_lost",
+            overloaded: "state_overload",
+            tired: "state_tired",
+            idle: "state_waiting",
+          }[dominant] || "state_monitor";
+        const label = t(labelKey);
 
         const message = (() => {
-          if (envStatuses.co2 === "danger") return "Open the window";
-          if (breakdown.total === 0) return "Waiting for feedback";
+          if (envStatuses.co2 === "danger") return t("message_open_window");
+          if (breakdown.total === 0) return t("message_waiting_feedback");
           switch (dominant) {
             case "ok":
-              return "Class is engaged";
+              return t("message_engaged");
             case "overloaded":
-              return "Slow down & review";
+              return t("message_overloaded");
             case "tired":
-              return "Time for a break";
+              return t("message_tired");
             case "lost":
-              return "Pause & clarify";
+              return t("message_lost");
             default:
-              return "Monitor class";
+              return t("message_monitor");
           }
         })();
 
@@ -1595,7 +1835,7 @@
         const brk = document.getElementById("summaryBreakdown");
         const sug = document.getElementById("summarySuggestion");
 
-        if (pill) pill.textContent = "Live";
+        if (pill) pill.textContent = t("pill_live");
         if (circle) {
           circle.style.setProperty("--climate", color);
           circle.classList.remove("pulse");
@@ -1611,8 +1851,14 @@
           const span = Math.round(breakdown.windowMs / 1000);
           brk.textContent =
             breakdown.total === 0
-              ? `No recent feedback (last ${span}s)`
-              : `OK ${breakdown.pct.ok}% · Lost ${breakdown.pct.lost}% · Overload ${breakdown.pct.overloaded}% · Tired ${breakdown.pct.tired}% (last ${span}s)`;
+              ? t("summary_no_recent", { span })
+              : t("summary_breakdown", {
+                  ok: breakdown.pct.ok,
+                  lost: breakdown.pct.lost,
+                  overload: breakdown.pct.overloaded,
+                  tired: breakdown.pct.tired,
+                  span,
+                });
         }
         if (sug) sug.textContent = message;
       }
@@ -1622,34 +1868,43 @@
           co2: data?.last_sensor?.sensors?.eco2_ppm ?? null,
           temperature: data?.last_sensor?.sensors?.temperature_c ?? null,
           noise: data?.last_sensor?.sensors?.noise_db ?? null,
+          voc: data?.last_sensor?.sensors?.voc_ppb ?? null,
+          lux: data?.last_sensor?.sensors?.brightness_lux ?? null,
         };
         const envStatuses = {
           co2: envStatus("co2", envVals.co2),
           temperature: envStatus("temperature", envVals.temperature),
           noise: envStatus("noise", envVals.noise),
+          voc: envStatus("voc", envVals.voc),
+          lux: envStatus("lux", envVals.lux),
         };
         const envList = [
-          { key: "co2", label: "Air", unit: "ppm" },
-          { key: "temperature", label: "Temp", unit: "°C" },
-          { key: "noise", label: "Noise", unit: "dB" },
+          { key: "co2", label: t("env_air"), unit: "ppm" },
+          { key: "temperature", label: t("env_temp"), unit: "°C" },
+          { key: "noise", label: t("env_noise"), unit: "dB" },
+          { key: "voc", label: t("env_voc"), unit: "ppb" },
+          { key: "lux", label: t("env_lux"), unit: "lx" },
         ]
           .map((row) => {
             const val = envVals[row.key];
             const st = envStatuses[row.key];
-            const onClass = st === "good" || st === "warning" ? "is-on" : "";
-            const icon = row.key === "co2" ? "🌬️" : row.key === "temperature" ? "🌡️" : "🔊";
+            const dotClass = (idx) => {
+              if (st === "good" && idx === 0) return "is-good";
+              if (st === "warning" && idx === 1) return "is-warning";
+              if (st === "danger" && idx === 2) return "is-danger";
+              return "";
+            };
             return `
               <div class="c-env-tile">
                 <div class="c-env-row">
-                  <div class="c-env-icon">${icon}</div>
                   <div class="c-env-meta">
                     <div class="c-env-label">${row.label}</div>
                     <div class="c-env-value">${val != null ? `${Math.round(val)} ${row.unit}` : "n/a"}</div>
                   </div>
                   <div class="c-env-dots">
-                    <span class="c-env-dot ${onClass}"></span>
-                    <span class="c-env-dot"></span>
-                    <span class="c-env-dot"></span>
+                    <span class="c-env-dot ${dotClass(0)}"></span>
+                    <span class="c-env-dot ${dotClass(1)}"></span>
+                    <span class="c-env-dot ${dotClass(2)}"></span>
                   </div>
                 </div>
               </div>
@@ -1657,7 +1912,7 @@
           })
           .join("");
         const cEnvList = document.getElementById("cEnvList");
-        if (cEnvList) cEnvList.innerHTML = envList + '<div class="c-env-footer">Tap for values</div>';
+        if (cEnvList) cEnvList.innerHTML = envList;
 
         const breakdown = computeBreakdown(data?.emotions || []);
         const dominantColor =
@@ -1671,40 +1926,41 @@
         const iconSvg = (() => {
           switch (breakdown.dominant) {
             case "ok":
-              return `<img src="src/state-ok.svg" alt="Engaged" class="state-icon" />`;
+              return `<img src="src/state-ok.svg" alt="${t("state_engaged")}" class="state-icon" />`;
             case "lost":
-              return `<img src="src/state-lost.svg" alt="Lost" class="state-icon" />`;
+              return `<img src="src/state-lost.svg" alt="${t("state_lost")}" class="state-icon" />`;
             case "overloaded":
-              return `<img src="src/state-overloaded.svg" alt="Overloaded" class="state-icon" />`;
+              return `<img src="src/state-overloaded.svg" alt="${t("state_overload")}" class="state-icon" />`;
             case "tired":
-              return `<img src="src/state-tired.svg" alt="Tired" class="state-icon" />`;
+              return `<img src="src/state-tired.svg" alt="${t("state_tired")}" class="state-icon" />`;
             default:
-              return `<img src="src/state-ok.svg" alt="Engaged" class="state-icon" />`;
+              return `<img src="src/state-ok.svg" alt="${t("state_engaged")}" class="state-icon" />`;
           }
         })();
-        const label =
+        const labelKey =
           {
-            ok: "ENGAGED",
-            lost: "LOST",
-            overloaded: "OVERLOAD",
-            tired: "TIRED",
-            idle: "WAITING",
-          }[breakdown.dominant] || "MONITOR";
+            ok: "state_engaged",
+            lost: "state_lost",
+            overloaded: "state_overload",
+            tired: "state_tired",
+            idle: "state_waiting",
+          }[breakdown.dominant] || "state_monitor";
+        const label = t(labelKey);
 
         const message = (() => {
-          if (envStatuses.co2 === "danger") return "Open the window";
-          if (breakdown.total === 0) return "Waiting for feedback";
+          if (envStatuses.co2 === "danger") return t("message_open_window");
+          if (breakdown.total === 0) return t("message_waiting_feedback");
           switch (breakdown.dominant) {
             case "ok":
-              return "Class is engaged";
+              return t("message_engaged");
             case "overloaded":
-              return "Slow down & review";
+              return t("message_overloaded");
             case "tired":
-              return "Time for a break";
+              return t("message_tired");
             case "lost":
-              return "Pause & clarify";
+              return t("message_lost");
             default:
-              return "Monitor class";
+              return t("message_monitor");
           }
         })();
 
@@ -1729,7 +1985,7 @@
 
       async function downloadClassState() {
         if (!pin) {
-          setStatus("Please enter a PIN.", true);
+          setStatus(t("status_pin_required"), true);
           return;
         }
         try {
@@ -1743,9 +1999,9 @@
           a.download = `class-${pin}-state.json`;
           a.click();
           URL.revokeObjectURL(url);
-          setStatus(`Downloaded state for ${pin}`);
+          setStatus(t("status_download_ok", { pin }));
         } catch (e) {
-          setStatus("Could not download class state.", true);
+          setStatus(t("status_download_fail"), true);
         }
       }
 
@@ -1786,23 +2042,31 @@
       function connectWithPin(entered) {
         const pinVal = (entered || "").trim();
         if (!pinVal) {
-          setStatus("Please enter a PIN.", true);
-          setStatusCompact("Please enter a PIN.");
+          setStatus(t("status_pin_required"), true);
+          setStatusCompact(t("status_pin_required"));
           return;
         }
         pinEditMode = false;
         setPin(pinVal);
         localStorage.setItem("class_pin", pinVal);
-        setStatusCompact("Connecting…");
+        setStatusCompact(t("status_connecting"));
         fetchState().catch(() => {});
         clearInterval(pollTimer);
         pollTimer = setInterval(fetchState, 5000);
       }
 
-      document.getElementById("connectBtn").onclick = () => {
-        const entered = (document.getElementById("pinInput").value || "").trim();
-        connectWithPin(entered);
-      };
+      setTheme(theme);
+      applyTranslations();
+
+      if (themeBtn) {
+        themeBtn.onclick = () => {
+          setTheme(theme === "dark" ? "light" : "dark");
+        };
+      }
+
+      if (connectBtn) {
+        connectBtn.onclick = () => connectWithPin(pinInput?.value || "");
+      }
       if (cConnectBtn) {
         cConnectBtn.onclick = () => connectWithPin(cPinInput?.value || "");
       }
