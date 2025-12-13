@@ -95,37 +95,34 @@ monofont: SFMono
 # **Introduction**
 !include chapters/1_introduction.md
 
-\newpage
+
 
 # **Exploratory study**
 !include chapters/2_exploratory.md
 
-\newpage
+
 
 # **Personas and scenarios**
 !include chapters/3_personas.md
 
-\newpage
+
 
 # **Design choices and design rationale**
 !include chapters/4_design_rationale.md
 
-\newpage
 
 # **Low-fidelity prototype**
 !include chapters/5_lowfi_prototype.md
 
-\newpage
+
 
 # **Controlled evaluation**
 !include chapters/6_evaluation_plan.md
 
-\newpage
 
 # **Analysis of evaluation results**
 !include chapters/8_results_analysis.md
 
-\newpage
 
 # **References** {-}
 

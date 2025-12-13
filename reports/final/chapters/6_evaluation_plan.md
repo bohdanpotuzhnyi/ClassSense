@@ -30,13 +30,13 @@ sensor device and one external display.
 
 ### Measurements
 
-All subjective measures were collected via Microsoft Forms questionnaires using 5-point Likert scales (1 = strongly disagree, 5 = strongly agree). For each condition, we measured:
-
-- Perceived usability
-- Perceived disruptiveness / practicality in class
-- Adoption intention
+All subjective measures were collected via Microsoft Forms questionnaires using 5-point Likert scales (1 = strongly disagree, 5 = strongly agree). 
+For each condition, we measured: Perceived usability; Perceived disruptiveness / practicality in class; Adoption intention
 
 We also collected forced-choice preferences (which version would you use in class?) and logged reaction-time traces for student input.
+
+In addition to questionnaire data, we logged interaction times for students (timestamps from start of interaction
+to completed input) to compare reaction times between the two input variants.
 
 ### Procedure
 
@@ -58,8 +58,5 @@ We also collected forced-choice preferences (which version would you use in clas
 5.	Questionnaire 2 (2 min): Second evaluation and final preference question.
 
 
-The controlled evaluation was run in short sessions (approximately 15 minutes per participant group) in a BYOD-like setup to approximate realistic classroom constraints.
-
-## Logged data
-
-In addition to questionnaire data, we logged interaction traces for students (timestamps from prompt to completed input) to compare reaction times between the two input variants.
+The controlled evaluation was run in short sessions (approximately 15 minutes per participant group) in a BYOD-like 
+setup to approximate realistic classroom constraints.
