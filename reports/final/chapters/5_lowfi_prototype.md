@@ -1,26 +1,49 @@
-We iterated from paper sketches to interactive Figma prototypes and then built a lightweight functional prototype to validate feasibility.
-
 ## Teacher prototype
 
-We created two dashboard layouts: a compact status bar and a full-screen dashboard. We started with paper sketches to test visual hierarchy and information density.
+We created two dashboard layouts: a compact status bar and a full-screen dashboard. Interactive Figma prototypes were 
+implemented.
 
-![Paper prototype of the teacher UI (horizontal stripe / vertical stripe / detailed dashboard).](../images/lowfi-teacher.png)
+\begin{figure}[H]
+\centering
 
-We then implemented interactive Figma prototypes so teachers could evaluate readability, colour coding, and density in a more realistic setting.
+% --- Left: paper prototype (vertically centered) ---
+\begin{minipage}[c]{0.48\textwidth}
+\centering
+\includegraphics[width=\linewidth]{images/lowfi-teacher.png}
+\end{minipage}
+\hfill
+% --- Right: vertical stack ---
+\begin{minipage}[c]{0.48\textwidth}
+\centering
+\includegraphics[width=\linewidth]{images/figma-teacher-1.png}
 
-![Figma prototype of the teacher UI (compact bar and full dashboard).](../images/figma-teacher-2.png)
+    \vspace{0.4cm}
+
+    \includegraphics[width=\linewidth]{images/figma-teacher-2.png}
+\end{minipage}
+
+\caption{Teacher UI concepts: paper prototype with alternative layouts (left) and corresponding digital mock-ups (right).}
+\label{fig:teacher-ui-concepts}
+\end{figure}
 
 ## Student prototype
 
-Two interaction variants were developed:
+We first sketched both concepts as paper prototypes. Then we implemented both variants in Figma to validate tap
+targets, layout, and visual calmness. Two interaction variants were developed:
 
 - **Buttons:** one-tap input for four states (OK, confused, overloaded, tired).
 - **Sliders:** more nuanced expression, but higher precision and attention demands.
 
-We first sketched both concepts as paper prototypes.
-
-![Paper prototype of the student UI (slider vs. buttons).](../images/lowfi-student.jpeg)
-
-Then we implemented both variants in Figma to validate tap targets, layout, and visual calmness.
-
-![Figma prototype of the student UI (sliders vs. buttons).](../images/figma-student-2.png)
+\begin{figure}[H]
+\centering
+\begin{minipage}[c]{0.46\textwidth}
+\centering
+\includegraphics[width=\linewidth]{images/lowfi-student.jpeg}
+\end{minipage}
+\hfill
+\begin{minipage}[c]{0.46\textwidth}
+\centering
+\includegraphics[width=\linewidth]{images/figma-student-2.png}
+\end{minipage}
+\caption{Student UI prototypes: paper prototype (left) and Figma prototype (right).}
+\end{figure}

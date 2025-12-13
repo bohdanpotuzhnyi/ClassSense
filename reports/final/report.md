@@ -8,7 +8,7 @@ date: "Semester A2025"
 subject: "Project report"
 toc: false
 toc-own-page: true
-toc-depth: 3
+toc-depth: 2
 lof: false
 nocite: '@*'
 link-citations: true
@@ -86,9 +86,8 @@ monofont: SFMono
 
 \end{titlepage}
 \clearpage
+\setcounter{tocdepth}{2}
 \tableofcontents
-\clearpage
-\listoffigures
 
 
 \newpage
@@ -118,13 +117,8 @@ monofont: SFMono
 
 \newpage
 
-# **Evaluation design and plan**
-!include chapters/6_evaluation_plan.md
-
-\newpage
-
 # **Controlled evaluation**
-!include chapters/7_controlled_eval.md
+!include chapters/6_evaluation_plan.md
 
 \newpage
 

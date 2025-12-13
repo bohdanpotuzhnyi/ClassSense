@@ -1,5 +1,3 @@
-This chapter summarises the results of the controlled experiment and draws practical conclusions for classroom use.
-
 ## Student UI: buttons vs. sliders
 
 ### Usability
