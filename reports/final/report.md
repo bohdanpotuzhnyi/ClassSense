@@ -1,159 +1,135 @@
 ---
-title: "Taler SAP integration: Theoretical Framework and Practical Implementation"
-author: [Bohdan Potuzhnyi, Vlada Svirsh]
-date: "2024-2025"
-subject: "Bachelor thesis"
-keywords: [Taler, SAP, Dolibarr, API Integration, Middleware, Transaction Processing, ERP]
-titlepage: true
-titlepage-color: "FFFFFF"
-titlepage-text-color: "697d91"
-titlepage-rule-color: "697d91"
-titlepage-rule-height: 2
-titlepage-logo: "pictures/BFH_Logo_deutsch.png"
-toc: true
+title: "**ClassSense:** Web-App for Classroom Climate and Focus Awareness "
+author:
+  - Bohdan Potuzhnyi
+  - Vlada Svirsh
+  - Samuel Schaffhauser
+date: "Semester A2025"
+subject: "Project report"
+toc: false
 toc-own-page: true
 toc-depth: 3
-lof: true
-logo: "pictures/BFH_Logo_deutsch.png"
+lof: false
+nocite: '@*'
 link-citations: true
 numbersections: true
+geometry:
+  - margin=2.3cm
 header-includes:
-  - \usepackage{graphicx}  
-  - \usepackage{svg}       
-  - \usepackage{amsmath}   
-  - \usepackage{hyperref}
-  - \usepackage{float}
+- \usepackage{graphicx}
+- \usepackage{svg}
+- \usepackage{amsmath}
+- \usepackage{hyperref}
+- \usepackage{float}
+- \usepackage{microtype}
+- \usepackage{caption}
+- \captionsetup{font=small,labelfont=bf,skip=4pt}
+- \usepackage{enumitem}
+- \setlist{nosep,leftmargin=*}
+- \setlength{\textfloatsep}{10pt plus 2pt minus 2pt}
+- \setlength{\floatsep}{8pt plus 2pt minus 2pt}
+- \setlength{\intextsep}{8pt plus 2pt minus 2pt}
+- \setlength{\parindent}{1.2em}
+- \setlength{\parskip}{0pt}
+- \newcommand{\thesistitle}{ClassSense}
+- \newcommand{\thesissubtitle}{Web-App for Classroom Climate and Focus Awareness}
+- \newcommand{\thesisauthor}{Bohdan Potuzhnyi\\Vlada Svirsh\\Samuel Schaffhauser}
+- \newcommand{\thesisdate}{Semester A2025}
 mainfont: SFProText
 sansfont: SFPro
 monofont: SFMono
-abstract: |
-  \newpage
-  # Abstract {.unnumbered .unlisted}
-  This thesis explores the theoretical integration of the GNU Taler Merchant Backend with different ERP systems such as SAP
-  and Dolibarr, aiming to streamline transaction processing, financial management, resource planning, and customer relationship
-  management. GNU Taler --- a digital payment system designed for secure and private transactions, is examined in the context
-  of ERP systems like SAP and Dolibarr. The thesis provides a comprehensive theoretical framework for the integration,
-  including an analysis of system architecture, methodology, and data flow. Emphasis is placed on real-time data synchronization,
-  the automation of manual processes, and the security protocols necessary for ensuring data integrity. While the focus is
-  primarily on the theoretical aspects of integration, this thesis also outlines potential practical implications for future
-  implementations in various ERP environments, particularly SAP S/4HANA and Dolibarr. The thesis lays the groundwork for
-  further development and testing by offering detailed insights into the technical requirements and challenges of such an
-  integration. This thesis includes a section on the practical implementation of the integration in the SAP S/4HANA 
-  system, debating the correctness of the proposed solution and describing the challenges of such integration.
-  \newpage
 ---
 
-\newpage
+\begin{titlepage}
+  \begin{center}
 
-# **Terminology** {- .unlisted}
+  \begin{figure}[t]
+  \vspace*{-2cm}        % to move header logo at the top
+  \center{\includegraphics[scale=0.2]{images/mcs.png}}
+  \vspace{0.4in}
+  \end{figure}
 
-1. **Taler** — A protocol for digital cash.
+    \thispagestyle{empty}
 
-2. **GNU Taler** — Software supporting the Taler protocol.
+    \LARGE{Project Report \\}
 
-3. **Consumer** — The person or company interacting with a business. This includes individual customers and corporate 
-clients buying goods or services. In the context of GNU Taler integration, consumers represent the end users of the payment system.
+    {\bfseries\Huge \thesistitle \par}
+    {\Large \vspace{0.1in} \thesissubtitle \par}
 
-4. **Merchant** — The business entity that uses the GNU Taler Merchant Backend for processing transactions, selling 
-goods, and issuing refunds.
+    \vspace{0.3in}
+    
+    \vspace{0.4in}
+    {\Large submitted by \par}
+    {\Large \thesisauthor\par}
 
-5. **Goods** — A general term describing the items in inventory, including both physical and digital products, 
-used in sales or refund processes.
+    \vspace{0.3in}
+    {\Large submitted to \par}
+    {\Large Department of Informatics at the University of Fribourg \par}
+    {\Large User Centered Design \par}
+    {\Large Prof. Dr. Denis Lalanne \par}
 
-6. **ERP** — Enterprise resource planning software system that helps organizations(merchants) streamline their core business 
-processes.
+    \vfill
+    {\Large \thesisdate \par}
 
-7. **SPAA (Single-Page Administration Application)** — The web-based administration tool for using the GNU Taler 
-Merchant Backend.
+  \vspace{0.9in}
 
-8. **CRM** --- Customer Relationship Management. 
+  % === Logos ==============================================
+  \begin{figure}[htp]
+    \centering
+    \includegraphics[scale=0.30]{images/unibe.png}\hfill
+    \includegraphics[scale=0.30]{images/unine.png}\hfill
+    \includegraphics[scale=0.80]{images/unifr.png}
+  \end{figure}
+  % === // Logos ===========================================
 
-9. **SMEs (Small and Medium-sized Enterprises)** — Businesses with limited resources compared to larger corporations. 
+  \end{center}
 
-10. **SAP R/3** — An older version of SAP ERP software, which has been succeeded by SAP S/4HANA.
+\end{titlepage}
+\clearpage
+\tableofcontents
+\clearpage
+\listoffigures
 
-11. **SAP S/4HANA** — The latest version of SAP ERP software, designed for real-time data processing and analytics.
-
-12. **Order document** — A standard name in the SAP system for documents that record information about one specific order
-in SAP systems.
-
-13. **Billing document** — A standard name in the SAP system for documents that record information about one 
-specific billing document, treat as request to be paid.
-
-14. **SAP SuccessFactors** — A cloud-based solution for human capital management (HCM) that integrates with 
-the SAP ecosystem.
-
-15. **T-code** — Short for "Transaction Code," a unique identifier in SAP systems that allows users to 
-access specific functions or screens.
-
-\newpage
-
-[//]: # (# **Project 2 Planning** {-})
-
-[//]: # ()
-[//]: # ()
-[//]: # ()
-[//]: # ()
-[//]: # (!include chapters/planning.md)
-
-[//]: # ()
-[//]: # ()
-[//]: # ()
-[//]: # ()
-[//]: # (\newpage)
-
-[//]: # ()
-[//]: # ()
-[//]: # ()
-[//]: # ()
-[//]: # (# **Bachelor Thesis Planning** {-})
-
-[//]: # ()
-[//]: # ()
-[//]: # ()
-[//]: # ()
-[//]: # (!include chapters/bt_planning.md)
-
-[//]: # ()
-[//]: # ()
-[//]: # ()
-[//]: # (\newpage)
 
 \newpage
 
 # **Introduction**
-
 !include chapters/1_introduction.md
 
 \newpage
 
-# **Technology Overview of Existing Components**
-
-!include chapters/2_literaturereview.md
-
-\newpage
-
-# **Technical Design of Integration Solution**
-
-!include chapters/3_methodology_new.md
+# **Exploratory study**
+!include chapters/2_exploratory.md
 
 \newpage
 
-# **Practical Implementation in the SAP S4/HANA Environment**
-
-!include chapters/4_practical_implementation.md
-
-\newpage
-
-# **Discussion**
-
-!include chapters/5_discussion.md
+# **Personas and scenarios**
+!include chapters/3_personas.md
 
 \newpage
 
-# **Conclusion**
+# **Design choices and design rationale**
+!include chapters/4_design_rationale.md
 
-!include chapters/6_conclusion.md
+\newpage
+
+# **Low-fidelity prototype**
+!include chapters/5_lowfi_prototype.md
+
+\newpage
+
+# **Evaluation design and plan**
+!include chapters/6_evaluation_plan.md
+
+\newpage
+
+# **Controlled evaluation**
+!include chapters/7_controlled_eval.md
+
+\newpage
+
+# **Analysis of evaluation results**
+!include chapters/8_results_analysis.md
 
 \newpage
 
@@ -161,18 +137,3 @@ access specific functions or screens.
 
 ::: {#refs}
 :::
-
-\newpage
-
-# **Appendices** {-}
-
-## Appendix A: Webhook documentation for Taler {- #taler_webhook}
-
-!include appendices/a2_merchant-api-webhooks.md
-
-\newpage
-
-## Appendix B: UI Samples {- #appendix_ui_samples}
-
-!include appendices/b1_ui_samples.md
-

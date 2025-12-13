@@ -10,7 +10,7 @@ BIB ?= bib/references.bib
 CSL ?= bib/apa.csl
 TEMPLATE ?=
 
-PANDOC_FLAGS = --listings --from markdown+citations --bibliography=$(BIB) --csl=$(CSL) --citeproc
+PANDOC_FLAGS = --listings --from markdown+citations --bibliography=$(BIB) --csl=$(CSL) --citeproc --filter pandoc-include
 ifneq ($(strip $(TEMPLATE)),)
 PANDOC_FLAGS += --template=$(TEMPLATE)
 endif
